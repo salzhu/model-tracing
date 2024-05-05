@@ -29,3 +29,7 @@ Install the required libraries using the provided `requirements.txt` file:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Afterwards run the script as follows:
+``` python main.py ```
