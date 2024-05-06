@@ -1,87 +1,0 @@
-slurm submission log: 2024-03-27 21:44:42.386117
-created following sbatch script: 
-
-###############################
-
-#!/bin/bash
-
-#SBATCH --account=nlp
-#SBATCH --cpus-per-task=2
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=salzhu-job-3074978
-#SBATCH --mem=128G
-#SBATCH --open-mode=append
-#SBATCH --output=salzhu-job-3074978.out
-#SBATCH --partition=jag-standard
-#SBATCH --time=14-0
-
-# activate your desired anaconda environment
-
-
-# cd to working directory
-cd .
-
-# launch commands
-srun --unbuffered run_as_child_processes 'python /nlp/scr/salzhu/mistral_mode_connectivity.py'
-
-###############################
-
-submission to slurm complete!
-
-
-###############################
-slurm submission output
-
-Submitted batch job 7387248
-
-
-
-###############################
-
-###############################
-start time: 2024-03-27 21:44:50.270427
-###############################
-start time: 2024-03-27 21:44:50.270646
-machine: jagupard37
-machine: jagupard37
-conda env: base
-###############################
-running following processes
-
-	python /nlp/scr/salzhu/mistral_mode_connectivity.py
-
-
-conda env: base
-###############################
-running following processes
-
-###############################
-command outputs: 
-
-
-	python /nlp/scr/salzhu/mistral_mode_connectivity.py
-
-
-###############################
-command outputs: 
-
-
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [02:01<02:01, 121.38s/it]Loading checkpoint shards:  50%|█████     | 1/2 [02:01<02:01, 121.39s/it]Loading checkpoint shards: 100%|██████████| 2/2 [02:56<00:00, 82.60s/it] Loading checkpoint shards: 100%|██████████| 2/2 [02:56<00:00, 88.41s/it]
-Loading checkpoint shards: 100%|██████████| 2/2 [02:56<00:00, 82.50s/it] Loading checkpoint shards: 100%|██████████| 2/2 [02:56<00:00, 88.34s/it]
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:58<01:57, 58.68s/it]Loading checkpoint shards:  33%|███▎      | 1/3 [00:58<01:57, 58.88s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [01:57<00:58, 58.91s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [01:57<00:58, 58.99s/it]Loading checkpoint shards: 100%|██████████| 3/3 [02:51<00:00, 56.49s/it]Loading checkpoint shards: 100%|██████████| 3/3 [02:51<00:00, 57.12s/it]
-Loading checkpoint shards: 100%|██████████| 3/3 [02:51<00:00, 56.50s/it]Loading checkpoint shards: 100%|██████████| 3/3 [02:51<00:00, 57.16s/it]
-Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
-Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Killed
-###############################
-end time: 2024-03-27 21:52:30.664269
-elapsed time: 0:07:40.393623
-slurmstepd: error: Detected 1 oom-kill event(s) in StepId=7387248.0. Some of your processes may have been killed by the cgroup out-of-memory handler.
-srun: error: jagupard37: task 0: Out Of Memory
-Loading checkpoint shards:  50%|█████     | 1/2 [02:31<02:31, 151.76s/it]Loading checkpoint shards: 100%|██████████| 2/2 [03:24<00:00, 93.73s/it] Loading checkpoint shards: 100%|██████████| 2/2 [03:24<00:00, 102.43s/it]
-------------------------------------------------------------------------------------
-**********[tensor(46.6023), tensor(46.4166), tensor(46.2415), tensor(46.0763), tensor(45.9203), tensor(45.7726), tensor(45.6326), tensor(45.4995), tensor(45.3726), tensor(45.2513)]
-###############################
-end time: 2024-03-27 22:01:21.100701
-elapsed time: 0:16:30.830274
-slurmstepd: error: Detected 1 oom-kill event(s) in StepId=7387248.batch. Some of your processes may have been killed by the cgroup out-of-memory handler.
