@@ -9,6 +9,8 @@ import numpy as np
 
 import copy
 
+# Returns permuted model. Takes in original model and fixed seed representing choice 
+# of permutation for mlp layers and embedding layers.
 def permute_model(model,mlp_permutation,emb_permutation,n_blocks=32):
     permute_embedding_layer(model,emb_permutation)
     permute_transformer_blocks(model,mlp_permutation,emb_permutation)
@@ -44,6 +46,7 @@ def permute_transformer_blocks(model,mlp_permutation,emb_permutation):
         elif dim_1 == len(emb_permutation):
             weights[key] = weights[key][:, emb_permutation]
 
+    # input_layernorm, post_attention_layernorm
     for key in weights:
         if 'model.layers' not in key: continue
         if len(weights[key].shape) != 1 or len(weights[key]) != len(emb_permutation): continue
