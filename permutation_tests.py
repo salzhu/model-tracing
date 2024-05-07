@@ -26,6 +26,7 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     testset = load_filtered_dataset("dlwh/wikitext_103_detokenized", "test", tokenizer_base)
 
+    torch.manual_seed(datetime.datetime.now().timestamp())
     mlp_permutation = torch.randperm(11008)
     emb_permutation = torch.randperm(4096)
 
