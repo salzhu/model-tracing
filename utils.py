@@ -90,35 +90,40 @@ def calculate_perplexity(model, tokenizer, text, device):
     return perplexity
 
 
-def interpolate_models(model_a, model_b, alpha=0.5):
-    """Interpolate between two model's parameters."""
+def interpolate_models(
+    model_a, model_b, alpha=0.5, model_arch="meta-llama/Llama-2-7b-hf"
+):
+    """Linearly Interpolate between two model's parameters, conditioned on architecture."""
     interpolated_state_dict = {}
     state_dict_a = model_a.state_dict()
     state_dict_b = model_b.state_dict()
 
+    if model_arch == "meta-llama/Llama-2-7b-hf":
+        vocab_size = 32000
+    else:
+        vocab_size = 32000
     for key in state_dict_a:
         # check that the vocabularies are the same length, if not
         # truncate to smaller vocab
         dim_a = state_dict_a[key].size(0)
         dim_b = state_dict_b[key].size(0)
-        if key in ["model.embed_tokens.weight", "lm_head.weight"] and (dim_a != dim_b):
-            if dim_a < dim_b:
-                interpolated_state_dict[key] = (1 - alpha) * state_dict_a[
-                    key
-                ] + alpha * state_dict_b[key][:dim_a, :]
-            else:
-                interpolated_state_dict[key] = (1 - alpha) * state_dict_a[
-                    key
-                ][:dim_b, :] + alpha * state_dict_b[key]
+        if key in ["model.embed_tokens.weight", "lm_head.weight"] and (
+            dim_a != vocab_size or dim_b != vocab_size
+        ):
+            # hard code vocab to llama2 which is 32000
+            interpolated_state_dict[key] = (1 - alpha) * state_dict_a[key][
+                :vocab_size, :
+            ] + alpha * state_dict_b[key][:vocab_size, :]
         else:
             interpolated_state_dict[key] = (1 - alpha) * state_dict_a[
                 key
             ] + alpha * state_dict_b[key]
-    
+
     model_interpolated = AutoModelForCausalLM.from_pretrained(
-        model_a.config._name_or_path, state_dict=interpolated_state_dict
+        "meta-llama/Llama-2-7b-hf", state_dict=interpolated_state_dict
     )
     return model_interpolated
+
 
 def interpolate_models_truncate(model_a, model_b, alpha=0.5):
     """Interpolate between two model's parameters. Truncates to first 32000 rows of vocab."""
@@ -137,21 +142,29 @@ def interpolate_models_truncate(model_a, model_b, alpha=0.5):
                     key
                 ] + alpha * state_dict_b[key][:32000, :]
             else:
-                interpolated_state_dict[key] = (1 - alpha) * state_dict_a[
-                    key
-                ][:32000, :] + alpha * state_dict_b[key]
+                interpolated_state_dict[key] = (1 - alpha) * state_dict_a[key][
+                    :32000, :
+                ] + alpha * state_dict_b[key]
         else:
             interpolated_state_dict[key] = (1 - alpha) * state_dict_a[
                 key
             ] + alpha * state_dict_b[key]
-    
+
     model_interpolated = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Llama-2-7b-hf", state_dict=interpolated_state_dict, torch_dtype=torch.bfloat16
+        "meta-llama/Llama-2-7b-hf",
+        state_dict=interpolated_state_dict,
+        torch_dtype=torch.bfloat16,
     )
-    return model_interpolated
+    return model_interpolated.to(torch.bfloat16)
+
 
 def evaluate(model, dataset, output_dir="./results"):
-    training_args = TrainingArguments(output_dir=output_dir, per_device_eval_batch_size=16, do_eval=True, report_to=None)
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        per_device_eval_batch_size=16,
+        do_eval=True,
+        report_to=None,
+    )
     trainer = Trainer(model=model, args=training_args, eval_dataset=dataset)
     result = trainer.evaluate()
     loss = result["eval_loss"]
