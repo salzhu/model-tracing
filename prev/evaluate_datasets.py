@@ -20,7 +20,11 @@ import pandas as pd
 
 # "lmsys/vicuna-7b-v1.5" "codellama/CodeLlama-7b-hf"
 
-datasets = ["/nlp/scr/salzhu/vicuna_codellama_mean_prompts.csv", "/nlp/scr/salzhu/vicuna_llemma_mean_prompts.csv", "/nlp/scr/salzhu/codellama_llemma_mean_prompts.csv"]
+datasets = [
+    "/nlp/scr/salzhu/vicuna_codellama_mean_prompts.csv",
+    "/nlp/scr/salzhu/vicuna_llemma_mean_prompts.csv",
+    "/nlp/scr/salzhu/codellama_llemma_mean_prompts.csv",
+]
 
 for dataset in datasets:
     df = pd.read_csv(dataset)
@@ -29,9 +33,11 @@ for dataset in datasets:
     # ppl = 0
 
     perplexity = load("perplexity", module_type="metric")
-    results = perplexity.compute(predictions=df['prompts'], model_id='lmsys/vicuna-7b-v1.5')
+    results = perplexity.compute(
+        predictions=df["prompts"], model_id="lmsys/vicuna-7b-v1.5"
+    )
 
-    print("Vicuna on " + dataset + ": " + str(results['mean_perplexity']))
+    print("Vicuna on " + dataset + ": " + str(results["mean_perplexity"]))
 
     # for line in df['prompts']:
     #     inputs = tokenizer_vicuna(line, return_tensors = "pt").to('cuda')
@@ -40,13 +46,14 @@ for dataset in datasets:
     #     count += 1
 
     # ppl /= count
-    # 
+    #
 
     perplexity = load("perplexity", module_type="metric")
-    results = perplexity.compute(predictions=df['prompts'], model_id="codellama/CodeLlama-7b-hf")
+    results = perplexity.compute(
+        predictions=df["prompts"], model_id="codellama/CodeLlama-7b-hf"
+    )
 
-    print("Codellama on " + dataset + ": " + str(results['mean_perplexity']))
-    
+    print("Codellama on " + dataset + ": " + str(results["mean_perplexity"]))
 
     # count = 0
     # ppl = 0
@@ -61,9 +68,11 @@ for dataset in datasets:
     # print("Codellama on " + dataset + ": " + str(ppl))
 
     perplexity = load("perplexity", module_type="metric")
-    results = perplexity.compute(predictions=df['prompts'], model_id="EleutherAI/llemma_7b")
+    results = perplexity.compute(
+        predictions=df["prompts"], model_id="EleutherAI/llemma_7b"
+    )
 
-    print("Llemma on " + dataset + ": " + str(results['mean_perplexity']))
+    print("Llemma on " + dataset + ": " + str(results["mean_perplexity"]))
 
     # count = 0
     # ppl = 0
@@ -76,4 +85,3 @@ for dataset in datasets:
 
     # ppl /= count
     # print("Llemma on " + dataset + ": " + str(ppl))
-
