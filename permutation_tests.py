@@ -39,7 +39,7 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     for alpha in alphas:
         interpolated_model = interpolate_models(model_base, model_ft, alpha).to('cuda')
-        loss, perplexity = evaluate(interpolated_model, testset)
+        loss, perplexity = evaluate_one_batch(interpolated_model, testset)
         perplexities.append(perplexity)
         losses.append(loss)
         interpolated_model.to("cpu")
