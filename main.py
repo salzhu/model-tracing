@@ -10,6 +10,8 @@ import csv
 from utils import calculate_l2_distance, interpolate_models
 import time
 import copy
+import argparse
+
 
 block_size = 512
 
@@ -31,7 +33,7 @@ def group_texts(examples):
     return result
 
 
-def main():
+def main(args):
     # Automatically detect CUDA device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -42,12 +44,12 @@ def main():
         "meta-llama/Llama-2-7b-hf",
         "codellama/CodeLlama-7b-hf",
         "openlm-research/open_llama_7b",
-        "huggyllama/llama-7b",
-        "lmsys/vicuna-7b-v1.5",
-        "EleutherAI/llemma_7b",
-        "lmsys/vicuna-7b-v1.1",
-        "microsoft/Orca-2-7b",
-        "LLM360/Amber",
+        # "huggyllama/llama-7b",
+        # "lmsys/vicuna-7b-v1.5",
+        # "EleutherAI/llemma_7b",
+        # "lmsys/vicuna-7b-v1.1",
+        # "microsoft/Orca-2-7b",
+        # "LLM360/Amber",
     ]
     models = [
         AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
@@ -57,35 +59,30 @@ def main():
     tokenizer.pad_token = tokenizer.eos_token
 
     # Prepare dataset
-    eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
 
-    # eval_dataset = eval_dataset.filter(lambda example: len(example["text"]) < 15)
+    if args.dataset == "wikitext":
+        eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
+        columns_ignored = ["text"]
+    else:  # args.dataset == "json"
+        eval_dataset = load_dataset("json", data_files="/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files/json_1.json")
+        columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+
     def tokenize_function(examples):
         return tokenizer(examples["text"])
 
     tokenized_datasets = eval_dataset.map(
-        tokenize_function, batched=True, num_proc=4, remove_columns=["text"]
+        tokenize_function, batched=True, num_proc=4, remove_columns=columns_ignored
     )
     lm_datasets = tokenized_datasets.map(
         group_texts,
         batched=True,
-        batch_size=1000,
-        num_proc=8,
+        batch_size=1,
+        num_proc=1,
     )
+    
     # Calculate the L2 distance between each pair of models
     model_pairs = list(itertools.combinations(enumerate(models), 2))
-    l2_distances = {}
-    for (idx_a, model_a), (idx_b, model_b) in tqdm(
-        model_pairs, desc="Calculating L2 Distances"
-    ):
-        if idx_a < idx_b:
-            l2_distance = calculate_l2_distance(model_a, model_b)
-            print(
-                f"L2 distance between {model_a.config._name_or_path} and {model_b.config._name_or_path}: {l2_distance}"
-            )
-            model_a_name = model_a.config._name_or_path.split("/")[-1]
-            model_b_name = model_b.config._name_or_path.split("/")[-1]
-            l2_distances[(model_a_name, model_b_name)] = l2_distance
+
 
     # Prepare for evaluation. Batch size is optimized for ~7B model
     training_args = TrainingArguments(
@@ -93,56 +90,15 @@ def main():
         per_device_eval_batch_size=4,
         do_eval=True,
         report_to=None,
-        dataloader_num_workers=8,
+        dataloader_num_workers=4,
         use_cpu=True,
     )
     alphas = [round(alpha * 0.1, 2) for alpha in range(11)]
     model = copy.deepcopy(models[0])
     trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
     print(f"create data loader")
-    eval_dataloader = trainer.get_test_dataloader(lm_datasets)
-    # hack so we can get nice dataloader from HF Trainer
-    # the trainer needs a model to create the dataloader
+    eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
     
-    #del trainer
-    # start_time = time.time()
-    # losses = []
-
-    # for batch in tqdm(eval_dataloader, desc="Evaluating"):
-    #     # HF Trainer finds GPU by default
-    #     input_ids = batch["input_ids"]
-    #     attention_mask = batch["attention_mask"]
-    #     labels = batch["labels"]
-
-    #     outputs = model(
-    #         input_ids=input_ids,
-    #         attention_mask=attention_mask,
-    #         labels=labels,
-    #     )
-    #     loss = outputs.loss
-    #     losses.append(loss.item())
-
-    #     # Move the batch tensors back to CPU to free up GPU memory
-    #     # input_ids = input_ids.to("cpu")
-    #     # attention_mask = attention_mask.to("cpu")
-    #     # labels = labels.to("cpu")
-
-    # loss_mean = sum(losses) / len(losses)
-    # print(f"Loss mean: {loss_mean}")
-
-    # end_time = time.time()
-    # execution_time = end_time - start_time
-    # print(f"Execution time base: {execution_time} seconds")
-
-    # # Move the model back to CPU
-    # model.to("cpu")
-
-    # # Clear the GPU cache
-
-    # # Delete all variables and tensors to release memory
-    # del model, input_ids, attention_mask, labels, outputs, loss
-    # torch.cuda.empty_cache()
-    # # Evaluate perplexity across model interpolations
 
 
     for (idx_a, model_a), (idx_b, model_b) in tqdm(model_pairs, desc="Model Interpolation"):
@@ -193,7 +149,7 @@ def main():
 
             # Save perplexities and model names to CSV
             csv_filename = "perplexities.csv"
-            csv_header = ["Model Pair", "L2 Distance"] + [
+            csv_header = ["Model Pair"] + [
                 f"Alpha {alpha}" for alpha in alphas
             ]
             if not os.path.exists(csv_filename):
@@ -204,8 +160,7 @@ def main():
             with open(csv_filename, "a", newline="") as csvfile:
                 writer = csv.writer(csvfile)
                 model_pair = f"{model_a_name} vs {model_b_name}"
-                l2_distance = l2_distances[(model_a_name, model_b_name)]
-                row = [model_pair, l2_distance] + perplexities
+                row = [model_pair] + perplexities
                 writer.writerow(row)
 
             # Create the plot
@@ -221,4 +176,7 @@ def main():
             plt.close()
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Model Interpolation")
+    parser.add_argument("--dataset", choices=["wikitext", "json"], default="json", help="Dataset to use")
+    args = parser.parse_args()
+    main(args)
