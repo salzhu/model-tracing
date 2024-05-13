@@ -89,23 +89,23 @@ def save_permuted_mode_connectivity_results(csv_filename, plot_path, model_a_nam
         plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
         plt.close()
         
-llama2_models_names = [("huggyllama/llama-7b", "huggyllama-7b"), ("openlm-research/open_llama_7b", "openllama-7b"), ("LLM360/Amber", "amber-7b"), ("meta-llama/Llama-2-7b-chat-hf", "llama2-chat-7b"), ("lmsys/vicuna-7b-v1.5", "vicuna-1.5-7b"), ("EleutherAI/llemma_7b", "llemma-7b"), ("codellama/CodeLlama-7b-hf", "codellama-7b"), ("lmsys/vicuna-7b-v1.1", "vicuna-1.1-7b")]
+# llama2_models_names = [("huggyllama/llama-7b", "huggyllama-7b"), ("openlm-research/open_llama_7b", "openllama-7b"), ("LLM360/Amber", "amber-7b"), ("meta-llama/Llama-2-7b-chat-hf", "llama2-chat-7b"), ("lmsys/vicuna-7b-v1.5", "vicuna-1.5-7b"), ("EleutherAI/llemma_7b", "llemma-7b"), ("codellama/CodeLlama-7b-hf", "codellama-7b"), ("lmsys/vicuna-7b-v1.1", "vicuna-1.1-7b")]
 
-base = "meta-llama/Llama-2-7b-hf"
-base_short_name = "llama2-7b"
+# base = "meta-llama/Llama-2-7b-hf"
+# base_short_name = "llama2-7b"
 
-for model_b in llama2_models_names:
-    print("Mode connectivity on " + model_b[1])
-    losses, perplexities = permuted_mode_connectivity(base, model_b[0])
+# for model_b in llama2_models_names:
+#     print("Mode connectivity on " + model_b[1])
+#     losses, perplexities = permuted_mode_connectivity(base, model_b[0])
 
-    print("Losses: ", end = '')
-    print(losses)
+#     print("Losses: ", end = '')
+#     print(losses)
 
-    print("Perplexities: ", end = '')
-    print(perplexities)
+#     print("Perplexities: ", end = '')
+#     print(perplexities)
 
-    print("Saving results and plots...")
-    save_permuted_mode_connectivity_results("/nlp/scr/salzhu/permutation_mode_connectivity_tests.csv", "/nlp/scr/salzhu/permutation_mode_connectivity_plots/", 
-                                            base_short_name, model_b[1], 0.1, perplexities, losses)
+#     print("Saving results and plots...")
+#     save_permuted_mode_connectivity_results("/nlp/scr/salzhu/permutation_mode_connectivity_tests.csv", "/nlp/scr/salzhu/permutation_mode_connectivity_plots/", 
+#                                             base_short_name, model_b[1], 0.1, perplexities, losses)
 
-    print("Saved!")
+#     print("Saved!")
