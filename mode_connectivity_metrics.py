@@ -97,7 +97,7 @@ def avg_loss(results_path, unpermuted_loss, normalize=True, alpha_step=0.1):
 def compute_p_value(counter, total):
     return (total - counter + 1) / total
 
-vicuna_unpermuted_loss = [5.366623401641846, 5.986485004425049, 6.671814441680908, 6.927042484283447, 7.014814376831055, 7.035386562347412, 7.0459303855896, 7.057350158691406, 7.077110290527344, 7.108644008636475, 7.143476963043213]
+# vicuna_unpermuted_loss = [5.366623401641846, 5.986485004425049, 6.671814441680908, 6.927042484283447, 7.014814376831055, 7.035386562347412, 7.0459303855896, 7.057350158691406, 7.077110290527344, 7.108644008636475, 7.143476963043213]
 
 # Plotting without the unpermuted trace
 # plot_traces("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", 'loss', 
@@ -110,9 +110,9 @@ vicuna_unpermuted_loss = [5.366623401641846, 5.986485004425049, 6.67181444168090
 #             "llama2-7b", "vicuna-1.5-7b", unpermuted_res=vicuna_unpermuted_loss)
 
 # How the unpermuted max loss compares to permuted max loss
-print(max_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
+# print(max_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
 
 # How the unpermuted avg loss (auc) compares to permuted avg loss
-print(avg_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
+# print(avg_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
 
-print("Done!")
+# print("Done!")
