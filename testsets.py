@@ -30,7 +30,7 @@ def load_filtered_dataset(dataset, split, tokenizer):
         return tokenizer(examples["text"])
 
     eval_dataset = load_dataset(dataset, split=split)
-    eval_dataset = eval_dataset.filter(lambda example: len(example["text"]) < 15)
+    # eval_dataset = eval_dataset.filter(lambda example: len(example["text"]) < 15)
     tokenized_datasets = eval_dataset.map(tokenize_function, batched=True, num_proc=4, remove_columns=["text"])
     lm_datasets = tokenized_datasets.map(
         group_texts, batched=True, batch_size=1000, num_proc=4)
