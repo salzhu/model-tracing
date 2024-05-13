@@ -11,7 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import datetime
 
-from utils import interpolate_models, evaluate
+from utils import interpolate_models, evaluate, evaluate_one_batch
 from permute import permute_model
 from testsets import load_filtered_dataset
 
