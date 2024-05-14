@@ -34,7 +34,7 @@ def group_texts(examples):
     result["labels"] = result["input_ids"].copy()
     return result
 
-def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
+def permuted_mode_connectivity(model_base, model_ft, tokenizer, alpha_step=0.1, end_points=True):
 
     device = 'cuda'
 
@@ -42,18 +42,18 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
     time1 = time.time()
 
     # Load base model, i.e. Llama2
-    model_base = AutoModelForCausalLM.from_pretrained(model_base_name, torch_dtype=torch.bfloat16)
+    # model_base = AutoModelForCausalLM.from_pretrained(model_base_name, torch_dtype=torch.bfloat16)
     # tokenizer_base = AutoTokenizer.from_pretrained(model_base_name)
 
     # Load fine tuned model to permute
-    model_ft = AutoModelForCausalLM.from_pretrained(model_ft_name, torch_dtype=torch.bfloat16)
+    # model_ft = AutoModelForCausalLM.from_pretrained(model_ft_name, torch_dtype=torch.bfloat16)
 
-    print(f"Loading model time: {time.time()-time1} seconds")
+    # print(f"Loading model time: {time.time()-time1} seconds")
     time1 = time.time()
 
     eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_base_name)
+    # tokenizer = AutoTokenizer.from_pretrained(model_base_name)
     tokenizer.pad_token = tokenizer.eos_token
 
     # eval_dataset = eval_dataset.filter(lambda example: len(example["text"]) < 15)
@@ -79,7 +79,7 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
         use_cpu=True,
     )
 
-    print(f"Loading tokenizer, dataset time: {time.time()-time1} seconds")
+    # print(f"Loading tokenizer, dataset time: {time.time()-time1} seconds")
     time1 = time.time()
 
     torch.manual_seed(datetime.datetime.now().timestamp())
@@ -88,10 +88,10 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     permute_model(model_ft, mlp_permutation, emb_permutation)
 
-    print(f"Permuting time: {time.time()-time1} seconds")
+    # print(f"Permuting time: {time.time()-time1} seconds")
 
     trainer = Trainer(model=model_ft, args=training_args, eval_dataset=lm_datasets)
-    print(f"create data loader")
+    # print(f"create data loader")
     eval_dataloader = trainer.get_test_dataloader(lm_datasets)
 
     losses = []
@@ -99,12 +99,15 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     alphas = [round(alpha * alpha_step, 2) for alpha in range(int(1/alpha_step + 1))]
 
+    if end_points == False:
+        alphas = alphas[1:-1]
+
     time1 = time.time()
 
     for alpha in alphas:
         time2 = time.time()
         interpolated_model = interpolate_models(model_base, model_ft, alpha).half().to('cuda')
-        print(f"One permutation interpolation time: {time.time()-time2} seconds")
+        # print(f"One permutation interpolation time: {time.time()-time2} seconds")
         time2 = time.time()
 
         for batch in tqdm(eval_dataloader):
@@ -136,14 +139,18 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
         del interpolated_model, input_ids, attention_mask, labels, outputs, loss
         torch.cuda.empty_cache()
         print("alpha = " + str(alpha) + " | " + str(loss_mean) + " | " + str(perplexity))
-        print(f"One interpolation eval time: {time.time()-time2} seconds")
+        # print(f"One interpolation eval time: {time.time()-time2} seconds")
 
     print(f"Total run time: {time.time()-time0} seconds")
     return losses, perplexities
 
-def save_permuted_mode_connectivity_results(csv_filename, plot_path, model_a_name, model_b_name, alpha_step, perplexities, losses, make_plots=True):
+def save_permuted_mode_connectivity_results(csv_filename, plot_path, model_a_name, model_b_name, alpha_step, perplexities, losses, make_plots=True, end_points=True):
 
     alphas = [round(alpha * alpha_step, 2) for alpha in range(int(1/alpha_step + 1))]
+    
+    if end_points == False:
+        alphas = alphas[1:-1]
+    
     csv_header = ["Model Pair", "time"] + [f"Alpha {alpha} ppl" for alpha in alphas] + [f"Alpha {alpha} loss" for alpha in alphas]
 
     if not os.path.exists(csv_filename):

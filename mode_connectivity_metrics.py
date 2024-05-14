@@ -7,37 +7,39 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 
-def plot_traces(results_path, metric, plot_path, model_a_name, model_b_name, unpermuted_res=False, normalize=True, alpha_step = 0.1):
+def plot_traces(results_path, metric, plot_path, model_a_name, model_b_name, unpermuted_res=False, normalize=True, alpha_step=0.1, end_points=True):
     
     df = pd.read_csv(results_path)
 
     alphas = [round(alpha * alpha_step, 2) for alpha in range(int(1/alpha_step + 1))]
+    if end_points == False:
+        alphas = alphas[1:-1]
     
     if metric == 'loss':
         
         plt.figure(figsize=(8, 6))
         for index, row in df.iterrows():
-            row = row[-int(1/alpha_step)-1:]
+            row = row[int(len(row)-(len(row)-2)/2):]
             if normalize: row=normalize_trace(row, alpha_step)
-            plt.plot(alphas, row)
+            plt.plot(alphas, row, 'o-')
             
         plt.xlabel("Alpha")
         plt.ylabel("Loss")
         plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
-        plot_filename = f"{plot_path}alpha_vs_loss_{model_a_name}_vs_{model_b_name}_{datetime.datetime.now().timestamp()}.png"
+        plot_filename = f"{plot_path}_{datetime.datetime.now().timestamp()}.png"
 
     if metric == 'perplexity':
         
         plt.figure(figsize=(8, 6))
         for index, row in df.iterrows():
-            row = row[-int(1/alpha_step)-1:]
+            row = row[2:int(2+(len(row)-2)/2)]
             if normalize: row=normalize_trace(row, alpha_step)
-            plt.plot(alphas, row)
+            plt.plot(alphas, row, 'o-')
             
         plt.xlabel("Alpha")
         plt.ylabel("Perplexity")
         plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
-        plot_filename = f"{plot_path}alpha_vs_ppl_{model_a_name}_vs_{model_b_name}_{datetime.datetime.now().timestamp()}.png"
+        plot_filename = f"{plot_path}_{datetime.datetime.now().timestamp()}.png"
 
     if unpermuted_res != False:
         plt.plot(alphas, normalize_trace(unpermuted_res, alpha_step))
@@ -63,7 +65,7 @@ def max_loss(results_path, unpermuted_loss, normalize=True, alpha_step=0.1):
     permuted_max_losses = []
 
     for index, row in df.iterrows():
-        row = row[-int(1/alpha_step)-1:]
+        row = row[int(len(row)-(len(row)-2)/2):]
         if normalize: row=normalize_trace(row, alpha_step)
         permuted_max_losses.append(max(row))
 
@@ -82,7 +84,7 @@ def avg_loss(results_path, unpermuted_loss, normalize=True, alpha_step=0.1):
     permuted_avg_losses = []
 
     for index, row in df.iterrows():
-        row = row[-int(1/alpha_step)-1:]
+        row = row[int(len(row)-(len(row)-2)/2):]
         if normalize: row=normalize_trace(row, alpha_step)
         permuted_avg_losses.append(sum(row) / len(row))
 
@@ -95,7 +97,7 @@ def avg_loss(results_path, unpermuted_loss, normalize=True, alpha_step=0.1):
     return counter, len(permuted_avg_losses)
 
 def compute_p_value(counter, total):
-    return (total - counter + 1) / total
+    return (total - counter - 1) / total
 
 # vicuna_unpermuted_loss = [5.366623401641846, 5.986485004425049, 6.671814441680908, 6.927042484283447, 7.014814376831055, 7.035386562347412, 7.0459303855896, 7.057350158691406, 7.077110290527344, 7.108644008636475, 7.143476963043213]
 
