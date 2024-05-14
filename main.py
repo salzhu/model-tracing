@@ -41,13 +41,13 @@ def main():
     model_list = [
         "meta-llama/Llama-2-7b-hf",
         "codellama/CodeLlama-7b-hf",
-        "openlm-research/open_llama_7b",
-        "huggyllama/llama-7b",
-        "lmsys/vicuna-7b-v1.5",
-        "EleutherAI/llemma_7b",
-        "lmsys/vicuna-7b-v1.1",
-        "microsoft/Orca-2-7b",
-        "LLM360/Amber",
+        # "openlm-research/open_llama_7b",
+        # "huggyllama/llama-7b",
+        # "lmsys/vicuna-7b-v1.5",
+        # "EleutherAI/llemma_7b",
+        # "lmsys/vicuna-7b-v1.1",
+        # "microsoft/Orca-2-7b",
+        # "LLM360/Amber",
     ]
     models = [
         AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
