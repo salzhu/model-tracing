@@ -57,6 +57,6 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, endpoint
     print("p-value: ")
     print(compute_p_value(count, total))
 
-permutations_main("meta-llama/Llama-2-7b-hf", "EleutherAI/llemma_7b", 10, 0.5, False,
-                  "loss", False, "/nlp/u/salzhu/model-tracing/llama2_llemma_midpoint_wikitext_singlesample.csv",
+permutations_main("meta-llama/Llama-2-7b-hf", "huggyllama/llama-7b", 10, 0.5, False,
+                  "loss", False, "/nlp/u/salzhu/model-tracing/llama2_llama1_midpoint_wikitext_singlesample.csv",
                   None)
