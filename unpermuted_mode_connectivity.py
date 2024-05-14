@@ -7,7 +7,7 @@ import math
 import numpy as np
 import copy
 
-from utils import interpolate_models, evaluate
+from utils import interpolate_models
 from testsets import load_filtered_dataset
 
 def unpermuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
