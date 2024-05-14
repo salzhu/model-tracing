@@ -38,12 +38,18 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     device = 'cuda'
 
+    time0 = time.time()
+    time1 = time.time()
+
     # Load base model, i.e. Llama2
     model_base = AutoModelForCausalLM.from_pretrained(model_base_name, torch_dtype=torch.bfloat16)
     # tokenizer_base = AutoTokenizer.from_pretrained(model_base_name)
 
     # Load fine tuned model to permute
     model_ft = AutoModelForCausalLM.from_pretrained(model_ft_name, torch_dtype=torch.bfloat16)
+
+    print(f"Loading model time: {time.time()-time1} seconds")
+    time1 = time.time()
 
     eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
 
@@ -73,11 +79,16 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
         use_cpu=True,
     )
 
+    print(f"Loading tokenizer, dataset time: {time.time()-time1} seconds")
+    time1 = time.time()
+
     torch.manual_seed(datetime.datetime.now().timestamp())
     mlp_permutation = torch.randperm(11008)
     emb_permutation = torch.randperm(4096)
 
     permute_model(model_ft, mlp_permutation, emb_permutation)
+
+    print(f"Permuting time: {time.time()-time1} seconds")
 
     trainer = Trainer(model=model_ft, args=training_args, eval_dataset=lm_datasets)
     print(f"create data loader")
@@ -88,10 +99,13 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
 
     alphas = [round(alpha * alpha_step, 2) for alpha in range(int(1/alpha_step + 1))]
 
-    for alpha in alphas:
-        interpolated_model = interpolate_models(model_base, model_ft, alpha).half().to('cuda')
+    time1 = time.time()
 
-        losses = []
+    for alpha in alphas:
+        time2 = time.time()
+        interpolated_model = interpolate_models(model_base, model_ft, alpha).half().to('cuda')
+        print(f"One permutation interpolation time: {time.time()-time2} seconds")
+        time2 = time.time()
 
         for batch in tqdm(eval_dataloader):
             # HF Trainer finds GPU by default
@@ -104,7 +118,7 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
                 labels=labels,
             )
             loss = outputs.loss
-            losses.append(loss.item())
+            # losses.append(loss.item())
 
             input_ids = input_ids.to("cpu")
             attention_mask = attention_mask.to("cpu")
@@ -112,16 +126,19 @@ def permuted_mode_connectivity(model_base_name, model_ft_name, alpha_step=0.1):
             torch.cuda.empty_cache()
             break
 
-        loss_mean = sum(losses) / len(losses)
+        # loss_mean = sum(losses) / len(losses)
+        loss_mean = loss.item()
         perplexity = math.exp(loss_mean)
         
         perplexities.append(perplexity)
-        losses.append(loss)
+        losses.append(loss_mean)
         interpolated_model.to("cpu")
         del interpolated_model, input_ids, attention_mask, labels, outputs, loss
         torch.cuda.empty_cache()
         print("alpha = " + str(alpha) + " | " + str(loss_mean) + " | " + str(perplexity))
+        print(f"One interpolation eval time: {time.time()-time2} seconds")
 
+    print(f"Total run time: {time.time()-time0} seconds")
     return losses, perplexities
 
 def save_permuted_mode_connectivity_results(csv_filename, plot_path, model_a_name, model_b_name, alpha_step, perplexities, losses, make_plots=True):
