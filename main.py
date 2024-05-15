@@ -11,7 +11,6 @@ from utils import calculate_l2_distance, interpolate_models
 import time
 import copy
 import argparse
-import glob
 
 
 block_size = 512
@@ -35,7 +34,6 @@ def group_texts(examples):
 
 
 def main(args):
-    start_time = time.time()
     # Automatically detect CUDA device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -61,127 +59,125 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained(models[0].config._name_or_path)
     tokenizer.pad_token = tokenizer.eos_token
 
-    # Scan the directory for JSON files
-    json_files = glob.glob("/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files_cpp/*.json")
+    # Prepare dataset
 
-    for json_file in json_files:
-        print(f"Processing {json_file}")
-
-        # Prepare dataset
-        eval_dataset = load_dataset("json", data_files=json_file)
+    if args.dataset == "wikitext":
+        eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
+        columns_ignored = ["text"]
+    else:  # args.dataset == "json"
+        eval_dataset = load_dataset("json", data_files="/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files/json_1.json")
         columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
 
-        def tokenize_function(examples):
-            return tokenizer(examples["text"])
+    def tokenize_function(examples):
+        return tokenizer(examples["text"])
 
-        tokenized_datasets = eval_dataset.map(
-            tokenize_function, batched=True, num_proc=4, remove_columns=columns_ignored
-        )
-        lm_datasets = tokenized_datasets.map(
-            group_texts,
-            batched=True,
-            batch_size=1,
-            num_proc=1,
-        )
-        
-        # Calculate the L2 distance between each pair of models
-        model_pairs = list(itertools.combinations(enumerate(models), 2))
+    tokenized_datasets = eval_dataset.map(
+        tokenize_function, batched=True, num_proc=4, remove_columns=columns_ignored
+    )
+    lm_datasets = tokenized_datasets.map(
+        group_texts,
+        batched=True,
+        batch_size=1,
+        num_proc=1,
+    )
+    
+    # Calculate the L2 distance between each pair of models
+    model_pairs = list(itertools.combinations(enumerate(models), 2))
 
-        # Prepare for evaluation. Batch size is optimized for ~7B model
-        training_args = TrainingArguments(
-            output_dir="./results",
-            per_device_eval_batch_size=4,
-            do_eval=True,
-            report_to=None,
-            dataloader_num_workers=4,
-            use_cpu=True,
-        )
-        alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
-        model = copy.deepcopy(models[0])
-        trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
-        print(f"create data loader")
-        eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
-        
-        for (idx_a, model_a), (idx_b, model_b) in tqdm(model_pairs, desc="Model Interpolation"):
-            if idx_a < idx_b:
-                perplexities = []
-                model_a_name = model_a.config._name_or_path.split("/")[-1]
-                model_b_name = model_b.config._name_or_path.split("/")[-1]
+
+    # Prepare for evaluation. Batch size is optimized for ~7B model
+    training_args = TrainingArguments(
+        output_dir="./results",
+        per_device_eval_batch_size=4,
+        do_eval=True,
+        report_to=None,
+        dataloader_num_workers=4,
+        use_cpu=True,
+    )
+    alphas = [round(alpha * 0.1, 2) for alpha in range(11)]
+    model = copy.deepcopy(models[0])
+    trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
+    print(f"create data loader")
+    eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
+    
+
+
+    for (idx_a, model_a), (idx_b, model_b) in tqdm(model_pairs, desc="Model Interpolation"):
+        if idx_a < idx_b:
+            perplexities = []
+            model_a_name = model_a.config._name_or_path.split("/")[-1]
+            model_b_name = model_b.config._name_or_path.split("/")[-1]
+
+            for alpha in tqdm(
+                alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
+            ):
+                interpolated_model = interpolate_models(model_a, model_b, alpha)
+                # cast to bfloat16 before GPU
+                interpolated_model = interpolated_model.half().to(device)
                 
-                for alpha in tqdm(
-                    alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
-                ):
-                    interpolated_model = interpolate_models(model_a, model_b, alpha)
-                    # cast to bfloat16 before GPU
-                    interpolated_model = interpolated_model.half().to(device)
-                    
 
-                    start_time = time.time()
-                    losses = []
+                start_time = time.time()
+                losses = []
 
-                    for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
-                        # HF Trainer finds GPU by default
-                        input_ids = batch["input_ids"].to(device)
-                        attention_mask = batch["attention_mask"].to(device)
-                        labels = batch["labels"].to(device)
-                        outputs = interpolated_model(
-                            input_ids=input_ids,
-                            attention_mask=attention_mask,
-                            labels=labels,
-                        )
-                        loss = outputs.loss
-                        losses.append(loss.item())
+                for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
+                    # HF Trainer finds GPU by default
+                    input_ids = batch["input_ids"].to(device)
+                    attention_mask = batch["attention_mask"].to(device)
+                    labels = batch["labels"].to(device)
+                    outputs = interpolated_model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        labels=labels,
+                    )
+                    loss = outputs.loss
+                    losses.append(loss.item())
 
-                    loss_mean = sum(losses) / len(losses)
-                    print(f"Loss mean: {loss_mean}")
-                    end_time = time.time()
-                    execution_time = end_time - start_time
-                    print(f"Execution time base: {execution_time} seconds")
+                loss_mean = sum(losses) / len(losses)
+                print(f"Loss mean: {loss_mean}")
+                end_time = time.time()
+                execution_time = end_time - start_time
+                print(f"Execution time base: {execution_time} seconds")
 
-                    perplexity = math.exp(loss_mean)
-                    perplexities.append(perplexity)
+                perplexity = math.exp(loss_mean)
+                perplexities.append(perplexity)
 
-                    # Move the model back to CPU
-                    interpolated_model.to("cpu")
+                # Move the model back to CPU
+                interpolated_model.to("cpu")
 
-                    # Clear the GPU cache
-                    del interpolated_model, input_ids, attention_mask, labels, outputs, loss
-                    torch.cuda.empty_cache()
+                # Clear the GPU cache
+                del interpolated_model, input_ids, attention_mask, labels, outputs, loss
+                torch.cuda.empty_cache()
 
-                # Save perplexities and model names to CSV
-                json_filename = os.path.splitext(os.path.basename(json_file))[0]
-                csv_filename = f"perplexities_{json_filename}.csv"
-                csv_header = ["Model Pair"] + [
-                    f"Alpha {alpha}" for alpha in alphas
-                ]
-                if not os.path.exists(csv_filename):
-                    with open(csv_filename, "w", newline="") as csvfile:
-                        writer = csv.writer(csvfile)
-                        writer.writerow(csv_header)
-
-                with open(csv_filename, "a", newline="") as csvfile:
+            # Save perplexities and model names to CSV
+            csv_filename = "perplexities.csv"
+            csv_header = ["Model Pair"] + [
+                f"Alpha {alpha}" for alpha in alphas
+            ]
+            if not os.path.exists(csv_filename):
+                with open(csv_filename, "w", newline="") as csvfile:
                     writer = csv.writer(csvfile)
-                    model_pair = f"{model_a_name} vs {model_b_name}"
-                    row = [model_pair] + perplexities
-                    writer.writerow(row)
+                    writer.writerow(csv_header)
 
-                # Create the plot
-                plt.figure(figsize=(8, 6))
-                plt.plot(alphas, perplexities)
-                plt.xlabel("Alpha")
-                plt.ylabel("Perplexity")
-                plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
+            with open(csv_filename, "a", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                model_pair = f"{model_a_name} vs {model_b_name}"
+                row = [model_pair] + perplexities
+                writer.writerow(row)
 
-                # Save the plot as a PNG file
-                plot_filename = f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}_{json_filename}.png"
-                plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
-                plt.close()
+            # Create the plot
+            plt.figure(figsize=(8, 6))
+            plt.plot(alphas, perplexities)
+            plt.xlabel("Alpha")
+            plt.ylabel("Perplexity")
+            plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
 
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"Total execution time: {execution_time} seconds")
+            # Save the plot as a PNG file
+            plot_filename = f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}.png"
+            plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+            plt.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
+    parser.add_argument("--dataset", choices=["wikitext", "json"], default="json", help="Dataset to use")
     args = parser.parse_args()
     main(args)
