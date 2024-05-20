@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM
 
+from scipy.optimize import linear_sum_assignment as LAP
+
 
 def compute_jsd_stable(model_a, model_b, tokenizer, text, device):
     inputs = tokenizer(text, return_tensors="pt").to(device)
@@ -170,3 +172,32 @@ def evaluate(model, dataset, output_dir="./results"):
     loss = result["eval_loss"]
     perplexity = math.exp(loss)
     return loss, perplexity
+
+
+# rohith test statistic stuff
+def compute_lap(base_model,ft_model,i=10):
+  base_wmat = base_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
+  ft_wmat = ft_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
+
+  perm = match_wmats(base_wmat,ft_wmat)
+
+  return -spcor(perm,torch.arange(len(perm)))
+
+def match_wmats(wmat0,wmat1):
+  dists = pdists(wmat0,wmat1).type(torch.float64)
+  perm = LAP(dists)[1]
+
+  return perm # wmat1[perm] should match wmat0
+
+def pdists(x,y):
+  with torch.no_grad():
+    xsum = torch.sum(torch.square(x),axis=-1)
+    ysum = torch.sum(torch.square(y),axis=-1)
+
+    dists = xsum.view(-1,1) + ysum.view(1,-1) - 2 * x@y.T
+
+  return dists
+
+def spcor(x,y):
+  n = len(x)
+  return 1 - torch.sum(6 * torch.square(x-y)) / (n * (n - 1))
