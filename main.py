@@ -13,7 +13,7 @@ import copy
 import argparse
 
 
-block_size = 512
+block_size = 2
 
 
 
@@ -45,12 +45,12 @@ def main(args):
         "meta-llama/Llama-2-7b-hf",
         "codellama/CodeLlama-7b-hf",
         "openlm-research/open_llama_7b",
-        "huggyllama/llama-7b",
+        #"huggyllama/llama-7b",
         "lmsys/vicuna-7b-v1.5",
-        "EleutherAI/llemma_7b",
-        "lmsys/vicuna-7b-v1.1",
-        "microsoft/Orca-2-7b",
-        "LLM360/Amber",
+        #"EleutherAI/llemma_7b",
+        #"lmsys/vicuna-7b-v1.1",
+        #"microsoft/Orca-2-7b",
+        #"LLM360/Amber",
     ]
     models = [
         AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
@@ -88,17 +88,17 @@ def main(args):
     # Prepare for evaluation. Batch size is optimized for ~7B model
     training_args = TrainingArguments(
         output_dir="./results",
-        per_device_eval_batch_size=4,
+        per_device_eval_batch_size=1,
         do_eval=True,
         report_to=None,
         dataloader_num_workers=4,
         use_cpu=True,
     )
-    alphas = [round(alpha * 0.1, 2) for alpha in range(11)]
+    alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
     model = copy.deepcopy(models[0])
     trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
     print(f"create data loader")
-    eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
+    eval_dataloader = trainer.get_test_dataloader(lm_datasets)
     
 
 
@@ -124,6 +124,7 @@ def main(args):
                     input_ids = batch["input_ids"].to(device)
                     attention_mask = batch["attention_mask"].to(device)
                     labels = batch["labels"].to(device)
+                    
                     outputs = interpolated_model(
                         input_ids=input_ids,
                         attention_mask=attention_mask,
@@ -131,6 +132,7 @@ def main(args):
                     )
                     loss = outputs.loss
                     losses.append(loss.item())
+                    break
 
                 loss_mean = sum(losses) / len(losses)
                 print(f"Loss mean: {loss_mean}")
@@ -149,7 +151,7 @@ def main(args):
                 torch.cuda.empty_cache()
 
             # Save perplexities and model names to CSV
-            csv_filename = "perplexities.csv"
+            csv_filename = "single_perplexities.csv"
             csv_header = ["Model Pair"] + [
                 f"Alpha {alpha}" for alpha in alphas
             ]
@@ -172,12 +174,12 @@ def main(args):
             plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
 
             # Save the plot as a PNG file
-            plot_filename = f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}.png"
+            plot_filename = f"single_alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}.png"
             plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
             plt.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
-    parser.add_argument("--dataset", choices=["wikitext", "json"], default="json", help="Dataset to use")
+    parser.add_argument("--dataset", choices=["wikitext", "json"], default="wikitext", help="Dataset to use")
     args = parser.parse_args()
     main(args)
