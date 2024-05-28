@@ -92,7 +92,7 @@ def max_loss_ahmed(results_path, num_points=5, normalize=True, alphas=[0.0, 0.3,
         if normalize: row=normalize_trace_2(row, alphas)
         max_losses.append(max(row))
 
-    return max(max_losses)
+    return max_losses
 
 def max_loss_compare(results_path, unpermuted_loss, num_points, normalize=True, alpha_step=0.1):
     df = pd.read_csv(results_path)
@@ -144,7 +144,7 @@ def avg_loss_ahmed(results_path, num_points=5, normalize=True, alphas=[0.0, 0.3,
         if normalize: row=normalize_trace_2(row, alphas)
         avg_losses.append(sum(row) / len(row))
 
-    return max(avg_losses)
+    return avg_losses
 
 def compute_p_value(counter, total):
     return (total - counter - 1) / total
