@@ -49,6 +49,23 @@ def plot_traces(results_path, metric, plot_path, model_a_name, model_b_name, unp
     plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
     plt.close()
 
+
+def plot_trace(losses, alpha_step, normalize, model_a_name, model_b_name, plot_path):
+
+    plt.figure(figsize=(8, 6))
+    if normalize: 
+        losses = normalize_trace(losses, alpha_step)
+    alphas = [round(alpha * alpha_step, 2) for alpha in range(int(1/alpha_step + 1))]
+    plt.plot(alphas, losses, 'o-')
+            
+    plt.xlabel("Alpha")
+    plt.ylabel("Loss")
+    plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
+    plot_filename = f"{plot_path}_{datetime.datetime.now().timestamp()}.png"
+
+    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
 def normalize_trace(trace, alpha_step):
     slope = trace[-1] - trace[0]
     start = trace[0]
