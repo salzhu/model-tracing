@@ -1,21 +1,16 @@
 import torch
+import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
-import numpy as np
-import copy
 import csv
-import os
 import os
 import time
 import gc
+import scipy
+from scipy.spatial import distance
 
 from datasets import load_dataset
 from permutation_tests import group_texts
 
-import warnings
-
-# os.environ['HF_HOME'] = '/nlp/scr/salzhu/hf'
-# os.environ['PIP_CACHE_DIR'] = "/scr/salzhu/"
-# os.environ['WANDB_CACHE_DIR'] = "/scr/salzhu/"
 def compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels):
     with torch.no_grad():
         outputs_a = model_a(
@@ -31,20 +26,69 @@ def compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels):
         logits_a = outputs_a.logits.squeeze()
         logits_b = outputs_b.logits.squeeze()
 
-        log_probs_a = torch.nn.functional.log_softmax(logits_a, dim=-1)
-        log_probs_b = torch.nn.functional.log_softmax(logits_b, dim=-1)
+        # log_probs_a = torch.nn.functional.log_softmax(logits_a, dim=-1)
+        # log_probs_b = torch.nn.functional.log_softmax(logits_b, dim=-1)
 
-        log_probs_a = log_probs_a[:, :32000]
-        log_probs_b = log_probs_b[:, :32000]
+        # log_probs_a = log_probs_a[:, :32000]
+        # log_probs_b = log_probs_b[:, :32000]
 
 
-        m = 0.5 * (log_probs_a + log_probs_b)
-        log_m = torch.logsumexp(m, dim=-1, keepdim=True)
+        # m = 0.5 * (log_probs_a + log_probs_b)
+        # log_m = torch.logsumexp(m, dim=-1, keepdim=True)
 
-        kl_div_a_m = (log_probs_a - log_m).sum(dim=-1)
-        kl_div_b_m = (log_probs_b - log_m).sum(dim=-1)
+        # kl_div_a_m = (log_probs_a - log_m).sum(dim=-1)
+        # kl_div_b_m = (log_probs_b - log_m).sum(dim=-1)
 
-        js_divergence = 0.5 * (kl_div_a_m + kl_div_b_m)
+        # js_divergence = 0.5 * (kl_div_a_m + kl_div_b_m)
+
+        probs_a = torch.nn.functional.log_softmax(logits_a, dim=-1)
+        probs_b = torch.nn.functional.log_softmax(logits_b, dim=-1)
+
+        probs_a = probs_a[:, :32000]
+        probs_b = probs_b[:, :32000]
+
+        # print(probs_a.shape)
+
+        # m = 0.5 * (probs_a.exp() + probs_b.exp()).log()
+        # kl_div_a_m = F.kl_div(probs_a, m, reduction="batchmean")
+        # kl_div_b_m = F.kl_div(probs_b, m, reduction="batchmean")
+        # print(kl_div_a_m)
+
+        # js_divergence = 0.5 * (kl_div_a_m + kl_div_b_m)
+        # print(js_divergence)
+
+        # print("method 1")
+
+        # print(js_divergence.item())
+
+        softmax_a = torch.softmax(logits_a, dim=-1)
+        softmax_b = torch.softmax(logits_b, dim=-1)
+
+        softmax_a = softmax_a[:, :32000]
+        softmax_b = softmax_b[:, :32000]
+        print(softmax_a.shape)
+
+        M = 0.5 * (softmax_a + softmax_b)
+
+        jsd2 = 0.5 * (F.kl_div(M.log(), softmax_a) +
+                   F.kl_div(M.log(), softmax_b))
+        
+        # print("method 2")
+        # print(jsd2)
+
+        # M = 0.5 * (probs_a + probs_b)
+
+        # jsd2 = 0.5 * (F.kl_div(M.log(), probs_a) +
+        #            F.kl_div(M.log(), probs_b))
+        
+        # print(jsd2)
+
+        jsd3 = distance.jensenshannon(probs_a.cpu(), probs_b.cpu())
+        # print("method 3")
+        # print(jsd3)
+        # print(sum(jsd3**2) / len(jsd3))
+
+        return jsd2.item(), sum(jsd3**2) / len(jsd3)
 
     return js_divergence.mean().item()
 
@@ -124,7 +168,8 @@ def main():
                 attention_mask = batch["attention_mask"].to(device)
                 labels = batch["labels"].to(device)
 
-                jsd = compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels)
+                jsd1, jsd2 = compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels)
+                print(jsd1, jsd2)
 
                 
                 break
@@ -140,7 +185,7 @@ def main():
             gc.collect()
             
 
-            csv_header = ["Model Pair", "l2", "jsd"]
+            csv_header = ["Model Pair", "jsd"]
 
             if not os.path.exists(filepath):
                 with open(filepath, "w", newline="") as csvfile:
@@ -150,10 +195,8 @@ def main():
             with open(filepath, "a", newline="") as csvfile:
                 writer = csv.writer(csvfile)
                 model_pair = f"{model_a_name} vs {model_b_name}"
-                row = [model_pair, jsd]
+                row = [model_pair, jsd1, jsd2]
                 writer.writerow(row)
-
-            csv_header = ["Model Pair", "l2"]
             
             print("done! time was")
             print(str(time.time() - time0))

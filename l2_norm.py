@@ -87,35 +87,35 @@ def load_model(model_name):
 
 
 # Load the models
-model_a = AutoModelForCausalLM.from_pretrained(
-    "meta-llama/Llama-2-7b-hf", torch_dtype=torch.bfloat16
-).to("cuda")
-model_b = AutoModelForCausalLM.from_pretrained(
-    "EleutherAI/llemma_7b", torch_dtype=torch.bfloat16
-).to("cuda")
-model_c = AutoModelForCausalLM.from_pretrained(
-    "codellama/CodeLlama-7b-hf", torch_dtype=torch.bfloat16
-).to("cuda")
-# # Calculate the L2 distance between the two models and get the layer distances
-l2_norm_model_a, layer_norms_model_a, num_layers_a, running_norm_a = calculate_l2_norm(
-    model_a
-)
-print(f"L2 norm for model A: {l2_norm_model_a}")
-print(f"average l2 norm over layers: {l2_norm_model_a / num_layers_a}")
-print(f"average running norm over layers: {running_norm_a / num_layers_a}")
-l2_norm_model_b, layer_norms_model_b, num_layers_b, running_norm_b = calculate_l2_norm(
-    model_b
-)
-l2_norm_model_c, layer_norms_model_c, num_layers_c, running_norm_c = calculate_l2_norm(
-    model_c
-)
-print(f"L2 norm for model A: {l2_norm_model_a}")
-print(f"l2 norm for model B: {l2_norm_model_b}")
-print(f"average l2 norm over layers: {l2_norm_model_b / num_layers_b}")
-print(f"average running norm over layers: {running_norm_b / num_layers_b}")
-print(f"l2 norm for model C: {l2_norm_model_c}")
-print(f"average l2 norm over layers: {l2_norm_model_c / num_layers_c}")
-print(f"average running norm over layers: {running_norm_c / num_layers_c}")
+# model_a = AutoModelForCausalLM.from_pretrained(
+#     "meta-llama/Llama-2-7b-hf", torch_dtype=torch.bfloat16
+# ).to("cuda")
+# model_b = AutoModelForCausalLM.from_pretrained(
+#     "EleutherAI/llemma_7b", torch_dtype=torch.bfloat16
+# ).to("cuda")
+# model_c = AutoModelForCausalLM.from_pretrained(
+#     "codellama/CodeLlama-7b-hf", torch_dtype=torch.bfloat16
+# ).to("cuda")
+# # # Calculate the L2 distance between the two models and get the layer distances
+# l2_norm_model_a, layer_norms_model_a, num_layers_a, running_norm_a = calculate_l2_norm(
+#     model_a
+# )
+# print(f"L2 norm for model A: {l2_norm_model_a}")
+# print(f"average l2 norm over layers: {l2_norm_model_a / num_layers_a}")
+# print(f"average running norm over layers: {running_norm_a / num_layers_a}")
+# l2_norm_model_b, layer_norms_model_b, num_layers_b, running_norm_b = calculate_l2_norm(
+#     model_b
+# )
+# l2_norm_model_c, layer_norms_model_c, num_layers_c, running_norm_c = calculate_l2_norm(
+#     model_c
+# )
+# print(f"L2 norm for model A: {l2_norm_model_a}")
+# print(f"l2 norm for model B: {l2_norm_model_b}")
+# print(f"average l2 norm over layers: {l2_norm_model_b / num_layers_b}")
+# print(f"average running norm over layers: {running_norm_b / num_layers_b}")
+# print(f"l2 norm for model C: {l2_norm_model_c}")
+# print(f"average l2 norm over layers: {l2_norm_model_c / num_layers_c}")
+# print(f"average running norm over layers: {running_norm_c / num_layers_c}")
 
 # avg_l2_distance, layer_distances, num_layers = calculate_l2_distance(model_a, model_b)
 

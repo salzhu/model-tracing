@@ -1,62 +1,173 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments, pipeline
-from datasets import load_dataset
-from torch.utils.data import DataLoader
-import transformers
-import math
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import numpy as np
 import copy
 import csv
 import os
-import matplotlib.pyplot as plt
-import datetime
 import os
+import time
 
-from utils import interpolate_models
-from permute import permute_model
-from testsets import load_filtered_dataset
-from permutation_tests import permuted_mode_connectivity, save_permuted_mode_connectivity_results
+from permutation_tests import permuted_mode_connectivity_l2
 from unpermuted_mode_connectivity import unpermuted_mode_connectivity
-from mode_connectivity_metrics import plot_traces, normalize_trace, max_loss, avg_loss, compute_p_value
+from l2_norm import calculate_l2_distance
 
 import warnings
 warnings.filterwarnings("ignore")
 
-# print(os.environ['HF_HOME'])
+os.environ['HF_HOME'] = '/nlp/scr/salzhu/hf'
+os.environ['PIP_CACHE_DIR'] = "/scr/salzhu/"
+os.environ['WANDB_CACHE_DIR'] = "/scr/salzhu/"
+
+print(os.environ['HF_HOME'])
 
 
 block_size = 512
 
-def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, endpoints, metric, normalize, filepath, save_plot):
+def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath_loss, filepath_norm_loss, filepath_l2):
 
     model_a = AutoModelForCausalLM.from_pretrained(model_a_name, torch_dtype=torch.bfloat16)
     model_b = AutoModelForCausalLM.from_pretrained(model_b_name, torch_dtype=torch.bfloat16)
 
     tokenizer_base = AutoTokenizer.from_pretrained(model_a_name)
 
+    losses = []
+    l2s = []
+
+    unperm_l2, a, b = calculate_l2_distance(model_a, model_b)
+
     for i in range(num_perm):
         print("Mode connectivity test " + str(i) + "/" + str(num_perm), end = " ")
-        losses, perplexities = permuted_mode_connectivity(model_a, model_b, tokenizer_base, alpha_step=alpha_step, end_points=endpoints)
-        save_permuted_mode_connectivity_results(filepath, save_plot, model_a_name, model_b_name, 
-                                                alpha_step, perplexities, losses, make_plots=False, end_points=endpoints)
+        loss, l2 = permuted_mode_connectivity_l2(model_a, model_b, tokenizer_base, alpha_step=alpha_step, end_points=False)
+        losses.append(loss[0])
+        l2s.append(l2[0])
 
-    unperm_loss, unperm_ppl = unpermuted_mode_connectivity(model_a_name, model_b_name, alpha_step=alpha_step, endpoints=endpoints)
+    unperm_losses, unperm_ppl = unpermuted_mode_connectivity(model_a_name, model_b_name, alpha_step=alpha_step, endpoints=True)
+    
 
-    if save_plot != None:
-        plot_traces(filepath, "loss", save_plot, model_a_name, model_b_name, 
-                unpermuted_res=unperm_loss, normalize=normalize, alpha_step=alpha_step, end_points=endpoints)
+    unperm_loss = unperm_losses[1]
+
+    norm_losses = []
+    for loss in losses:
+        norm_losses.append(loss - (unperm_losses[0] + unperm_losses[2]) / 2)
+
+    # if save_plot != None:
+    #     plot_traces(filepath, "loss", save_plot, model_a_name, model_b_name, 
+    #             unpermuted_res=unperm_loss, normalize=normalize, alpha_step=alpha_step, end_points=endpoints)
 
     count = 0
-    total = 0
+    total = len(losses)
+    # if metric == 'max_loss':
+    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    # elif metric == 'avg_loss':
+    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+
+    for l in losses[:-1]:
+        if unperm_loss <= l: count += 1
     
-    if metric == 'max_loss':
-        count, total = max_loss(filepath, unperm_loss, alpha_step=alpha_step)
-    elif metric == 'avg_loss':
-        count, total = avg_loss(filepath, unperm_loss, alpha_step=alpha_step)
+    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    
+    print(count, total)
+    print("loss p-value: ")
+    print(str(count / total))
+    loss_p = count / total
 
-    print("p-value: ")
-    print(compute_p_value(count, total))
+    csv_header = ["Model Pair", "loss p-value", "unpermuted loss"] + ["permuted losses"]
 
-permutations_main("meta-llama/Llama-2-7b-hf", "huggyllama/llama-7b", 10, 0.5, False,
-                  "loss", False, "/nlp/u/salzhu/model-tracing/llama2_llama1_midpoint_wikitext_singlesample.csv",
-                  None)
+    if not os.path.exists(filepath_loss):
+        with open(filepath_loss, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(csv_header)
+    
+    with open(filepath_loss, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        model_pair = f"{model_a_name} vs {model_b_name}"
+        row = [model_pair, loss_p, unperm_loss] + losses
+        writer.writerow(row)
+
+    count = 0
+    total = len(norm_losses)  
+    # if metric == 'max_loss':
+    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    # elif metric == 'avg_loss':
+    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+
+    unperm_norm_loss = unperm_losses[1] - (unperm_losses[0] + unperm_losses[2]) / 2
+    for l in norm_losses[:-1]:
+        if unperm_norm_loss <= l: count += 1
+    
+    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    
+    print(count, total)
+    print("norm loss p-value: ")
+    print(str(count / total))
+    norm_loss_p = count / total
+
+    csv_header = ["Model Pair", "norm loss p-value", "unpermuted norm loss"] + ["permuted norm losses"]
+
+    if not os.path.exists(filepath_norm_loss):
+        with open(filepath_norm_loss, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(csv_header)
+    
+    with open(filepath_norm_loss, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        model_pair = f"{model_a_name} vs {model_b_name}"
+        row = [model_pair, norm_loss_p, unperm_norm_loss] + norm_losses
+        writer.writerow(row)
+
+    count = 0
+    total = len(l2s)
+    # if metric == 'max_loss':
+    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    # elif metric == 'avg_loss':
+    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+
+    for l in l2s[:-1]:
+        if unperm_l2 <= l: count += 1
+    
+    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
+    
+    print(count, total)
+    print("l2 p-value: ")
+    print(str(count / total))
+    l2_p = count / total
+
+    csv_header = ["Model Pair", "l2 p-value", "unpermuted l2 dist"] + ["permuted l2 distances"]
+
+    if not os.path.exists(filepath_l2):
+        with open(filepath_l2, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(csv_header)
+    
+    with open(filepath_l2, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        model_pair = f"{model_a_name} vs {model_b_name}"
+        row = [model_pair, l2_p, unperm_l2] + l2s
+        writer.writerow(row)
+
+file1 = "/nlp/u/salzhu/model-tracing/permutation_loss_midpoint_wikitext_single.csv"
+file2 = "/nlp/u/salzhu/model-tracing/permutation_norm_loss_midpoint_wikitext_single.csv"
+file3 = "/nlp/u/salzhu/model-tracing/permutation_l2_midpoint_wikitext_single.csv"
+
+model_list = [
+        "meta-llama/Llama-2-7b-hf",
+        "codellama/CodeLlama-7b-hf",
+        "openlm-research/open_llama_7b",
+        "huggyllama/llama-7b",
+        "lmsys/vicuna-7b-v1.5",
+        "EleutherAI/llemma_7b",
+        "lmsys/vicuna-7b-v1.1",
+        "microsoft/Orca-2-7b",
+        "LLM360/Amber",
+    ]
+
+for i in range(len(model_list)):
+    for j in range(i+1, len(model_list)):
+        if(i == 0 and j <= 7): continue
+        print("Starting...")
+        time0 = time.time()
+        print(model_list[i], model_list[j])
+        permutations_main(model_list[i], model_list[j], 100, 0.5, file1, file2, file3)
+        print("done! time was")
+        print(str(time.time() - time0))
+
