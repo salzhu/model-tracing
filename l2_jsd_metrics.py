@@ -27,14 +27,14 @@ def compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels):
             labels=labels,
         )
         print("b")
-        print(outputs_a)
+        # print(outputs_a)
         outputs_b = model_b(
             input_ids=input_ids,
             attention_mask=attention_mask,
             labels=labels,
         )
         print("c")
-        print(outputs_b)
+        # print(outputs_b)
         logits_a = outputs_a.logits.squeeze()
         logits_b = outputs_b.logits.squeeze()
         print("d")
@@ -43,8 +43,8 @@ def compute_jsd_tokenized(model_a, model_b, input_ids, attention_mask, labels):
         log_probs_b = torch.nn.functional.log_softmax(logits_b, dim=-1)
         print("e")
 
-        log_probs_a = log_probs_a[:32000]
-        log_probs_b = log_probs_b[:32000]
+        log_probs_a = log_probs_a[:512][:32000]
+        log_probs_b = log_probs_b[:512][:32000]
 
         print(log_probs_a.shape)
         print(log_probs_b.shape)
@@ -76,7 +76,7 @@ model_list = [
 
 for i in range(len(model_list)):
     for j in range(i+1, len(model_list)):
-        if(i == 0 and j <= 6): continue 
+        # if(i == 0 and j <= 6): continue 
         print("Starting...")
         time0 = time.time()
 
@@ -121,7 +121,7 @@ for i in range(len(model_list)):
 
             input_ids = batch["input_ids"]
             print(len(input_ids))
-            print(input_ids)
+            # print(input_ids)
             attention_mask = batch["attention_mask"]
             labels = batch["labels"]
 
