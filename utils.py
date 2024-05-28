@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM
 
+from scipy.optimize import linear_sum_assignment as LAP
+
 
 def compute_jsd_stable(model_a, model_b, tokenizer, text, device):
     inputs = tokenizer(text, return_tensors="pt").to(device)
@@ -156,3 +158,47 @@ def interpolate_models_truncate(model_a, model_b, alpha=0.5):
         torch_dtype=torch.bfloat16,
     )
     return model_interpolated.to(torch.bfloat16)
+
+def compute_emb_lap(model_a,model_b):
+  perm = match_emb(model_a,model_b)
+
+  return spcor(perm,torch.arange(len(perm)))
+
+def match_mlp(base_model,ft_model,i=0):
+  base_wmat = base_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
+  ft_wmat = ft_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
+
+  perm = match_wmats(base_wmat,ft_wmat)
+
+  return perm
+
+def match_emb(base_model,ft_model,layer='inp'):
+  if layer == 'inp':
+    weight_id = 'model.embed_tokens.weight'
+  if layer == 'out':
+    weight_id = 'lm_head.weight'
+
+  base_wmat = base_model.state_dict()[weight_id].T
+  ft_wmat = ft_model.state_dict()[weight_id].T
+
+  perm = match_wmats(base_wmat[:,:32000],ft_wmat[:,:32000])
+  return perm
+
+def match_wmats(wmat0,wmat1):
+  dists = pdists(wmat0,wmat1).type(torch.float64)
+  perm = LAP(dists)[1]
+
+  return perm # wmat1[perm] should match wmat0
+
+def pdists(x,y):
+  with torch.no_grad():
+    xsum = torch.sum(torch.square(x),axis=-1)
+    ysum = torch.sum(torch.square(y),axis=-1)
+
+    dists = xsum.view(-1,1) + ysum.view(1,-1) - 2 * x@y.T
+
+  return dists
+  
+def spcor(x,y):
+  n = len(x)
+  return 1 - torch.sum(6 * torch.square(x-y)) / (n * (n - 1))
