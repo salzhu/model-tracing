@@ -181,7 +181,11 @@ def match_emb(base_model,ft_model,layer='inp'):
   base_wmat = base_model.state_dict()[weight_id].T
   ft_wmat = ft_model.state_dict()[weight_id].T
 
+<<<<<<< HEAD
   perm = match_wmats(base_wmat[:,:32000],ft_wmat[:,:32000])
+=======
+  perm = match_wmats(base_wmat,ft_wmat)
+>>>>>>> 1d9ce2e0724ce63164a42ba7e1ccc12eec488b18
   return perm
 
 def match_wmats(wmat0,wmat1):
