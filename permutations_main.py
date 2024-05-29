@@ -33,43 +33,31 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath
     losses = []
     l2s = []
 
+    # unpermuted model metrics
     unperm_l2, a, b = calculate_l2_distance(model_a, model_b)
+    unperm_losses, unperm_ppl = unpermuted_mode_connectivity(model_a_name, model_b_name, alpha_step=alpha_step, endpoints=True)
+    unperm_loss = unperm_losses[1]
 
+    # apply permutations and metrics
     for i in range(num_perm):
         print("Mode connectivity test " + str(i) + "/" + str(num_perm), end = " ")
         loss, l2 = permuted_mode_connectivity_l2(model_a, model_b, tokenizer_base, alpha_step=alpha_step, end_points=False)
         losses.append(loss[0])
         l2s.append(l2[0])
-
-    unperm_losses, unperm_ppl = unpermuted_mode_connectivity(model_a_name, model_b_name, alpha_step=alpha_step, endpoints=True)
     
-
-    unperm_loss = unperm_losses[1]
-
+    # computing normalized losses (level endpoints to 0)
     norm_losses = []
     for loss in losses:
         norm_losses.append(loss - (unperm_losses[0] + unperm_losses[2]) / 2)
 
-    # if save_plot != None:
-    #     plot_traces(filepath, "loss", save_plot, model_a_name, model_b_name, 
-    #             unpermuted_res=unperm_loss, normalize=normalize, alpha_step=alpha_step, end_points=endpoints)
-
+    # losses, unnormalized p-value and write to file
     count = 0
     total = len(losses)
-    # if metric == 'max_loss':
-    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    # elif metric == 'avg_loss':
-    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-
     for l in losses[:-1]:
         if unperm_loss <= l: count += 1
-    
-    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    
-    print(count, total)
-    print("loss p-value: ")
-    print(str(count / total))
-    loss_p = count / total
+        
+    loss_p = round(1 - count / total, 2)
+    print("loss p-value: " + str(loss_p))
 
     csv_header = ["Model Pair", "loss p-value", "unpermuted loss"] + ["permuted losses"]
 
@@ -84,23 +72,16 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath
         row = [model_pair, loss_p, unperm_loss] + losses
         writer.writerow(row)
 
+    # losses, normalized p-value and write to file
     count = 0
     total = len(norm_losses)  
-    # if metric == 'max_loss':
-    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    # elif metric == 'avg_loss':
-    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
 
     unperm_norm_loss = unperm_losses[1] - (unperm_losses[0] + unperm_losses[2]) / 2
     for l in norm_losses[:-1]:
         if unperm_norm_loss <= l: count += 1
-    
-    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    
-    print(count, total)
-    print("norm loss p-value: ")
-    print(str(count / total))
-    norm_loss_p = count / total
+        
+    norm_loss_p = round(1 - count / total, 2)
+    print("norm loss p-value: " + str(norm_loss_p))
 
     csv_header = ["Model Pair", "norm loss p-value", "unpermuted norm loss"] + ["permuted norm losses"]
 
@@ -115,22 +96,15 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath
         row = [model_pair, norm_loss_p, unperm_norm_loss] + norm_losses
         writer.writerow(row)
 
+    # l2 p-value and write to file
     count = 0
     total = len(l2s)
-    # if metric == 'max_loss':
-    #     count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    # elif metric == 'avg_loss':
-    #     count, total = avg_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
 
     for l in l2s[:-1]:
         if unperm_l2 <= l: count += 1
-    
-    # count, total = max_loss_compare(filepath, unperm_loss, alpha_step=alpha_step)
-    
-    print(count, total)
-    print("l2 p-value: ")
-    print(str(count / total))
-    l2_p = count / total
+        
+    l2_p = round(1 - count / total, 2)
+    print("l2 p-value: " + str(l2_p))    
 
     csv_header = ["Model Pair", "l2 p-value", "unpermuted l2 dist"] + ["permuted l2 distances"]
 
@@ -147,7 +121,7 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath
 
 file1 = "/nlp/u/salzhu/model-tracing/permutation_loss_midpoint_wikitext_single.csv"
 file2 = "/nlp/u/salzhu/model-tracing/permutation_norm_loss_midpoint_wikitext_single.csv"
-file3 = "/nlp/u/salzhu/model-tracing/permutation_l2_midpoint_wikitext_single.csv"
+file3 = "/nlp/u/salzhu/model-tracing/permutation_l2_updated_midpoint_wikitext_single.csv"
 
 model_list = [
         "meta-llama/Llama-2-7b-hf",
@@ -163,7 +137,9 @@ model_list = [
 
 for i in range(len(model_list)):
     for j in range(i+1, len(model_list)):
-        if(i == 0 and j <= 7): continue
+        if(i == 0): continue
+        if(i == 1): continue
+        if(i == 2 and j <= 4): continue
         print("Starting...")
         time0 = time.time()
         print(model_list[i], model_list[j])
