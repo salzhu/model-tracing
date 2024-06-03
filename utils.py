@@ -159,29 +159,30 @@ def interpolate_models_truncate(model_a, model_b, alpha=0.5):
     )
     return model_interpolated.to(torch.bfloat16)
 
+def compute_emb_lap(model_a,model_b):
+  perm = match_emb(model_a,model_b)
 
-def evaluate(model, dataset, output_dir="./results"):
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        per_device_eval_batch_size=16,
-        do_eval=True,
-        report_to=None,
-    )
-    trainer = Trainer(model=model, args=training_args, eval_dataset=dataset)
-    result = trainer.evaluate()
-    loss = result["eval_loss"]
-    perplexity = math.exp(loss)
-    return loss, perplexity
+  return spcor(perm,torch.arange(len(perm)))
 
-
-# rohith test statistic stuff
-def compute_lap(base_model,ft_model,i=10):
+def match_mlp(base_model,ft_model,i=0):
   base_wmat = base_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
   ft_wmat = ft_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
 
   perm = match_wmats(base_wmat,ft_wmat)
 
-  return -spcor(perm,torch.arange(len(perm)))
+  return perm
+
+def match_emb(base_model,ft_model,layer='inp'):
+  if layer == 'inp':
+    weight_id = 'model.embed_tokens.weight'
+  if layer == 'out':
+    weight_id = 'lm_head.weight'
+
+  base_wmat = base_model.state_dict()[weight_id].T
+  ft_wmat = ft_model.state_dict()[weight_id].T
+
+  perm = match_wmats(base_wmat[:,:32000],ft_wmat[:,:32000])
+  return perm
 
 def match_wmats(wmat0,wmat1):
   dists = pdists(wmat0,wmat1).type(torch.float64)
@@ -197,7 +198,7 @@ def pdists(x,y):
     dists = xsum.view(-1,1) + ysum.view(1,-1) - 2 * x@y.T
 
   return dists
-
+  
 def spcor(x,y):
   n = len(x)
   return 1 - torch.sum(6 * torch.square(x-y)) / (n * (n - 1))
