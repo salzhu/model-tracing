@@ -13,7 +13,7 @@ import copy
 import argparse
 
 
-block_size = 2
+block_size = 512
 
 
 
@@ -44,9 +44,9 @@ def main(args):
     model_list = [
         "meta-llama/Llama-2-7b-hf",
         "codellama/CodeLlama-7b-hf",
-        "openlm-research/open_llama_7b",
+        #"openlm-research/open_llama_7b",
         #"huggyllama/llama-7b",
-        "lmsys/vicuna-7b-v1.5",
+        #"lmsys/vicuna-7b-v1.5",
         #"EleutherAI/llemma_7b",
         #"lmsys/vicuna-7b-v1.1",
         #"microsoft/Orca-2-7b",
@@ -64,9 +64,8 @@ def main(args):
     if args.dataset == "wikitext":
         eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
         columns_ignored = ["text"]
-    else:  # args.dataset == "json"
-        eval_dataset = load_dataset("json", data_files="/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files/json_1.json")
-        columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+    else:
+        raise ValueError(f"main.py only supports wikitext.")
 
     def tokenize_function(examples):
         return tokenizer(examples["text"])
@@ -87,8 +86,8 @@ def main(args):
 
     # Prepare for evaluation. Batch size is optimized for ~7B model
     training_args = TrainingArguments(
-        output_dir="./results",
-        per_device_eval_batch_size=1,
+        output_dir="./hf_results",
+        per_device_eval_batch_size=3,
         do_eval=True,
         report_to=None,
         dataloader_num_workers=4,
@@ -99,7 +98,15 @@ def main(args):
     trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
     print(f"create data loader")
     eval_dataloader = trainer.get_test_dataloader(lm_datasets)
-    
+
+    # create directories for results
+    base_dir = f"{os.getcwd()}/results"
+    os.makedirs(base_dir, exist_ok=True)
+    imgs_dir = os.path.join(base_dir, "imgs")
+    os.makedirs(imgs_dir, exist_ok=True)
+    csv_dir = os.path.join(base_dir, "csv")
+    print(csv_dir)
+    os.makedirs(csv_dir, exist_ok=True)
 
 
     for (idx_a, model_a), (idx_b, model_b) in tqdm(model_pairs, desc="Model Interpolation"):
@@ -120,6 +127,7 @@ def main(args):
                 losses = []
 
                 for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
+                    # import ipdb; ipdb.set_trace()
                     # HF Trainer finds GPU by default
                     input_ids = batch["input_ids"].to(device)
                     attention_mask = batch["attention_mask"].to(device)
@@ -132,7 +140,6 @@ def main(args):
                     )
                     loss = outputs.loss
                     losses.append(loss.item())
-                    break
 
                 loss_mean = sum(losses) / len(losses)
                 print(f"Loss mean: {loss_mean}")
@@ -151,7 +158,7 @@ def main(args):
                 torch.cuda.empty_cache()
 
             # Save perplexities and model names to CSV
-            csv_filename = "single_perplexities.csv"
+            csv_filename = f"{csv_dir}/single_perplexities.csv"
             csv_header = ["Model Pair"] + [
                 f"Alpha {alpha}" for alpha in alphas
             ]
@@ -175,6 +182,7 @@ def main(args):
 
             # Save the plot as a PNG file
             plot_filename = f"single_alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}.png"
+            plot_path = f"{imgs_dir}/{plot_filename}"
             plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
             plt.close()
 

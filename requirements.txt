@@ -5,3 +5,4 @@ accelerate
 wandb
 ipdb
 numpy
+scipy
