@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import argparse
 import pickle
+import timeit
 
 from utils.llama.model import avg_model,permute_model
 from utils.llama.matching import align_model
@@ -31,6 +32,8 @@ args = parser.parse_args()
 
 from huggingface_hub import login
 login(token=args.token)
+
+start = timeit.default_timer()
 
 results = {}
 results['args'] =  args
@@ -64,6 +67,9 @@ if args.align is True:
     align_model(base_model,ft_model,tmp_model)
     avg_model(base_model,tmp_model,tmp_model,attn=False)
     results['aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+
+end = timeit.default_timer()
+results['time'] = end - start
 
 print(results)
 pickle.dump(results,open(args.save,"wb"))
