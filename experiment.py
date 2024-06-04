@@ -15,7 +15,9 @@ parser = argparse.ArgumentParser(description="Experiment Settings")
 
 parser.add_argument('--base_model_id',default="meta-llama/Llama-2-7b-hf",type=str)
 parser.add_argument('--ft_model_id',default="lmsys/vicuna-7b-v1.1",type=str)
+
 parser.add_argument('--permute',action='store_true')
+parser.add_argument('--align',action='store_true')
 
 parser.add_argument('--dataset_id',default="dlwh/wikitext_103_detokenized",type=str)
 parser.add_argument('--block_size',default=512,type=int)
@@ -56,11 +58,12 @@ results['base loss'] = sum(evaluate(base_model,dataloader))
 results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
 avg_model(base_model,ft_model,tmp_model,attn=False)
-results['aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+results['non-aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
 
-align_model(base_model,ft_model,tmp_model)
-avg_model(base_model,tmp_model,tmp_model,attn=False)
-results['aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+if args.align is True:
+    align_model(base_model,ft_model,tmp_model)
+    avg_model(base_model,tmp_model,tmp_model,attn=False)
+    results['aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
 
 print(results)
 pickle.dump(results,open(args.save,"wb"))
