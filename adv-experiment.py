@@ -10,9 +10,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import argparse
 import pickle
 
-from .utils.llama.model import avg_model,permute_model
-from .utils.llama.matching import align_model
-from .utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
+from utils.llama.model import avg_model,permute_model
+from utils.llama.matching import align_model
+from utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
