@@ -15,8 +15,6 @@ import argparse
 
 block_size = 512
 
-
-
 def group_texts(examples):
     # Concatenate all texts.
     concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
@@ -32,6 +30,8 @@ def group_texts(examples):
     result["labels"] = result["input_ids"].copy()
     return result
 
+def load_model(model_name):
+    return AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
 
 def main(args):
     # Automatically detect CUDA device
@@ -44,23 +44,20 @@ def main(args):
     model_list = [
         "meta-llama/Llama-2-7b-hf",
         "codellama/CodeLlama-7b-hf",
-        #"openlm-research/open_llama_7b",
-        #"huggyllama/llama-7b",
-        #"lmsys/vicuna-7b-v1.5",
-        #"EleutherAI/llemma_7b",
-        #"lmsys/vicuna-7b-v1.1",
-        #"microsoft/Orca-2-7b",
-        #"LLM360/Amber",
+        "openlm-research/open_llama_7b",
+        "huggyllama/llama-7b",
+        "lmsys/vicuna-7b-v1.5",
+        "EleutherAI/llemma_7b",
+        "lmsys/vicuna-7b-v1.1",
+        "microsoft/Orca-2-7b",
+        "LLM360/Amber",
     ]
-    models = [
-        AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        for model_name in model_list
-    ]
-    tokenizer = AutoTokenizer.from_pretrained(models[0].config._name_or_path)
+
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_list[0])
     tokenizer.pad_token = tokenizer.eos_token
 
     # Prepare dataset
-
     if args.dataset == "wikitext":
         eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
         columns_ignored = ["text"]
@@ -79,10 +76,6 @@ def main(args):
         batch_size=1,
         num_proc=1,
     )
-    
-    # Calculate the L2 distance between each pair of models
-    model_pairs = list(itertools.combinations(enumerate(models), 2))
-
 
     # Prepare for evaluation. Batch size is optimized for ~7B model
     training_args = TrainingArguments(
@@ -94,10 +87,14 @@ def main(args):
         use_cpu=True,
     )
     alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
-    model = copy.deepcopy(models[0])
-    trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
-    print(f"create data loader")
+    # Load an initial model to create the trainer and dataloader
+    initial_model = load_model(model_list[0])
+    trainer = Trainer(model=initial_model, args=training_args, eval_dataset=lm_datasets)
     eval_dataloader = trainer.get_test_dataloader(lm_datasets)
+    del initial_model
+
+    # Calculate the L2 distance between each pair of models
+    model_pairs = list(itertools.combinations(enumerate(model_list), 2))
 
     # create directories for results
     base_dir = f"{os.getcwd()}/results"
@@ -108,27 +105,37 @@ def main(args):
     print(csv_dir)
     os.makedirs(csv_dir, exist_ok=True)
 
+    current_model_a, current_model_b = None, None
+    current_model_a_name, current_model_b_name = None, None
 
-    for (idx_a, model_a), (idx_b, model_b) in tqdm(model_pairs, desc="Model Interpolation"):
+    for (idx_a, model_a_name), (idx_b, model_b_name) in tqdm(model_pairs, desc="Model Interpolation"):
         if idx_a < idx_b:
             perplexities = []
-            model_a_name = model_a.config._name_or_path.split("/")[-1]
-            model_b_name = model_b.config._name_or_path.split("/")[-1]
+
+            if current_model_a is None or current_model_a_name != model_a_name:
+                if current_model_a is not None:
+                    del current_model_a
+                    torch.cuda.empty_cache()
+                current_model_a = load_model(model_a_name).to("cpu")
+                current_model_a_name = model_a_name
+
+            if current_model_b is None or current_model_b_name != model_b_name:
+                if current_model_b is not None:
+                    del current_model_b
+                    torch.cuda.empty_cache()
+                current_model_b = load_model(model_b_name).to("cpu")
+                current_model_b_name = model_b_name
 
             for alpha in tqdm(
                 alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
             ):
-                interpolated_model = interpolate_models(model_a, model_b, alpha)
-                # cast to bfloat16 before GPU
+                interpolated_model = interpolate_models(current_model_a, current_model_b, alpha)
                 interpolated_model = interpolated_model.half().to(device)
-                
 
                 start_time = time.time()
                 losses = []
 
                 for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
-                    # import ipdb; ipdb.set_trace()
-                    # HF Trainer finds GPU by default
                     input_ids = batch["input_ids"].to(device)
                     attention_mask = batch["attention_mask"].to(device)
                     labels = batch["labels"].to(device)
@@ -157,11 +164,16 @@ def main(args):
                 del interpolated_model, input_ids, attention_mask, labels, outputs, loss
                 torch.cuda.empty_cache()
 
+            # split on HF org so we don't get accidental
+            # directory error
+            model_a_name = model_a_name.split("/")[-1]
+            model_b_name = model_b_name.split("/")[-1]
             # Save perplexities and model names to CSV
             csv_filename = f"{csv_dir}/single_perplexities.csv"
             csv_header = ["Model Pair"] + [
                 f"Alpha {alpha}" for alpha in alphas
             ]
+            
             if not os.path.exists(csv_filename):
                 with open(csv_filename, "w", newline="") as csvfile:
                     writer = csv.writer(csvfile)
@@ -183,7 +195,7 @@ def main(args):
             # Save the plot as a PNG file
             plot_filename = f"single_alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}.png"
             plot_path = f"{imgs_dir}/{plot_filename}"
-            plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+            plt.savefig(plot_path, dpi=300, bbox_inches="tight")
             plt.close()
 
 if __name__ == "__main__":
