@@ -2,9 +2,6 @@ MLP_SIZE = 11008
 EMB_SIZE = 4096
 
 import torch
-
-from huggingface_hub import login
-login(token='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')
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import argparse
@@ -24,10 +21,14 @@ parser.add_argument('--dataset_id',default="dlwh/wikitext_103_detokenized",type=
 parser.add_argument('--block_size',default=512,type=int)
 parser.add_argument('--batch_size',default=4,type=int)
 
-parser.add_argument('--save',default="",type=str)
+parser.add_argument('--save',default="results.p",type=str)
 parser.add_argument('--seed',default=0,type=int)
+parser.add_argument('--token',default="",type=str)
 
 args = parser.parse_args()
+
+from huggingface_hub import login
+login(token=args.token)
 
 results = {}
 results['args'] =  args
