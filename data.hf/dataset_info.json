@@ -1,0 +1,91 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "wikitext_103_detokenized",
+  "dataset_size": 1054084016,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_0_of_8.jsonl.zst": {
+      "num_bytes": 22127451,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_1_of_8.jsonl.zst": {
+      "num_bytes": 22135538,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_2_of_8.jsonl.zst": {
+      "num_bytes": 22166917,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_3_of_8.jsonl.zst": {
+      "num_bytes": 22258127,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_4_of_8.jsonl.zst": {
+      "num_bytes": 22270070,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_5_of_8.jsonl.zst": {
+      "num_bytes": 22331298,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_6_of_8.jsonl.zst": {
+      "num_bytes": 22271652,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/train/train_7_of_8.jsonl.zst": {
+      "num_bytes": 22251069,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/validation/validation.jsonl.zst": {
+      "num_bytes": 365219,
+      "checksum": null
+    },
+    "hf://datasets/dlwh/wikitext_103_detokenized@62078bd590eae798b6b3cd720fc52b5e88914439/data/test/test.jsonl.zst": {
+      "num_bytes": 406084,
+      "checksum": null
+    }
+  },
+  "download_size": 178583425,
+  "features": {
+    "text": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 1232667441,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 1049347940,
+      "num_examples": 2330058,
+      "shard_lengths": [
+        1132117,
+        1120109,
+        77832
+      ],
+      "dataset_name": "wikitext_103_detokenized"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 2229080,
+      "num_examples": 4922,
+      "dataset_name": "wikitext_103_detokenized"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 2506996,
+      "num_examples": 5782,
+      "dataset_name": "wikitext_103_detokenized"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
