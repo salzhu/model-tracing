@@ -4,7 +4,7 @@ EMB_SIZE = 4096
 import torch
 
 from huggingface_hub import login
-login(token='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')
+login(token='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')
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import argparse
