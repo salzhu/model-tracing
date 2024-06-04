@@ -37,31 +37,35 @@ start = timeit.default_timer()
 
 results = {}
 results['args'] =  args
+results['text'] = []
 
 torch.manual_seed(args.seed)
 
-base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
+#base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
 base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
-ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
+#ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
+#ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
 
 if args.permute is True:
     mlp_permutation = torch.randperm(MLP_SIZE)
     emb_permutation = torch.randperm(EMB_SIZE)
     permute_model(ft_model,ft_model,mlp_permutation,emb_permutation)
 
-tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
-tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
+#tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
+#tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
 dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",args.block_size,base_tokenizer)
 dataloader = prepare_hf_dataloader(dataset,args.batch_size)
+print(dataset)
+for batch in dataloader:
+    results['text'].append(base_tokenizer.batch_decode(batch['input_ids']))
 
-results['base loss'] = sum(evaluate(base_model,dataloader))
-results['ft loss'] = sum(evaluate(ft_model,dataloader))
+#results['base loss'] = sum(evaluate(base_model,dataloader))
+#results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
-avg_model(base_model,ft_model,tmp_model,attn=False)
-results['non-aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+#avg_model(base_model,ft_model,tmp_model,attn=False)
+#results['non-aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
 
 if args.align is True:
     align_model(base_model,ft_model,tmp_model)
