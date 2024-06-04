@@ -7,7 +7,8 @@ def prepare_hf_dataset(hf_path,block_size,tokenizer,split="test"):
   raw_dataset = load_dataset(hf_path, split=split)
   dataset = raw_dataset.map(
         lambda examples : tokenize_function(examples,tokenizer), batched=True, remove_columns=["text"]
-    ).map(
+    )
+  dataset = dataset.map(
         lambda examples : group_texts(examples,block_size), batched=True, batch_size=1
     )
   dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
