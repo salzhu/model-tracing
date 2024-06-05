@@ -93,17 +93,19 @@ def calculate_perplexity(model, tokenizer, text, device):
 
 
 def interpolate_models(
-    model_a, model_b, alpha=0.5, model_arch="meta-llama/Llama-2-7b-hf"
+    model_a, model_b, alpha=0.5, model_arch='llama'
 ):
     """Linearly Interpolate between two model's parameters, conditioned on architecture."""
     interpolated_state_dict = {}
     state_dict_a = model_a.state_dict()
     state_dict_b = model_b.state_dict()
 
-    if model_arch == "meta-llama/Llama-2-7b-hf":
+    if 'llama' in model_arch.lower():
         vocab_size = 32000
+        model_name = "meta-llama/Llama-2-7b-hf"
     elif 'olmo' in model_arch.lower():
         vocab_size = 50304
+        model_name = 'allenai/OLMo-7B-hf'
     else:
         vocab_size = 32000
     for key in state_dict_a:
@@ -124,7 +126,7 @@ def interpolate_models(
             ] + alpha * state_dict_b[key]
 
     model_interpolated = AutoModelForCausalLM.from_pretrained(
-        model_arch, state_dict=interpolated_state_dict
+        model_name, state_dict=interpolated_state_dict
     )
     return model_interpolated
 

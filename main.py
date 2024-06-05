@@ -42,19 +42,25 @@ def main(args):
 
     # Load models and tokenizer
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    model_list = [
-        "/scr/ahmedah/olmo/step1000_4B_tokens/seed_0_4B",
-        "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B"
-        # "meta-llama/Llama-2-7b-hf",
-        # "codellama/CodeLlama-7b-hf",
-        # "openlm-research/open_llama_7b",
-        # "huggyllama/llama-7b",
-        # "lmsys/vicuna-7b-v1.5",
-        # "EleutherAI/llemma_7b",
-        # "lmsys/vicuna-7b-v1.1",
-        # "microsoft/Orca-2-7b",
-        # "LLM360/Amber",
-    ]
+
+    model_arch = args.model_arch
+    if model_arch == 'llama':
+        model_list = [
+            "meta-llama/Llama-2-7b-hf",
+            "codellama/CodeLlama-7b-hf",
+            "openlm-research/open_llama_7b",
+            "huggyllama/llama-7b",
+            "lmsys/vicuna-7b-v1.5",
+            "EleutherAI/llemma_7b",
+            "lmsys/vicuna-7b-v1.1",
+            "microsoft/Orca-2-7b",
+            "LLM360/Amber",
+        ]
+    elif model_arch == 'olmo':
+        model_list = [
+            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_0_4B",
+            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B"
+        ]
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_list[0])
@@ -133,7 +139,8 @@ def main(args):
                 for alpha in tqdm(
                     alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
                 ):
-                    interpolated_model = interpolate_models(current_model_a, current_model_b, alpha, model_arch='allenai/OLMo-7B-hf')
+                    
+                    interpolated_model = interpolate_models(current_model_a, current_model_b, alpha, model_arch=model_arch)
                     interpolated_model = interpolated_model.half().to(device)
 
                     start_time = time.time()
@@ -207,5 +214,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
     parser.add_argument("--dataset", choices=["wikitext", "json"], default="wikitext", help="Dataset to use")
+    parser.add_argument("--model_arch", choices=['llama', 'olmo'], default='llama', help='default model architecture to use')
     args = parser.parse_args()
     main(args)
