@@ -1,4 +1,5 @@
 import torch
+import gc
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 import itertools
 import os
@@ -42,15 +43,17 @@ def main(args):
     # Load models and tokenizer
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     model_list = [
-        "meta-llama/Llama-2-7b-hf",
-        "codellama/CodeLlama-7b-hf",
-        "openlm-research/open_llama_7b",
-        "huggyllama/llama-7b",
-        "lmsys/vicuna-7b-v1.5",
-        "EleutherAI/llemma_7b",
-        "lmsys/vicuna-7b-v1.1",
-        "microsoft/Orca-2-7b",
-        "LLM360/Amber",
+        "/scr/ahmedah/olmo/step1000_4B_tokens/seed_0_4B",
+        "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B"
+        # "meta-llama/Llama-2-7b-hf",
+        # "codellama/CodeLlama-7b-hf",
+        # "openlm-research/open_llama_7b",
+        # "huggyllama/llama-7b",
+        # "lmsys/vicuna-7b-v1.5",
+        # "EleutherAI/llemma_7b",
+        # "lmsys/vicuna-7b-v1.1",
+        # "microsoft/Orca-2-7b",
+        # "LLM360/Amber",
     ]
 
     # Load tokenizer
@@ -126,46 +129,49 @@ def main(args):
                 current_model_b = load_model(model_b_name).to("cpu")
                 current_model_b_name = model_b_name
 
-            for alpha in tqdm(
-                alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
-            ):
-                interpolated_model = interpolate_models(current_model_a, current_model_b, alpha)
-                interpolated_model = interpolated_model.half().to(device)
+            with torch.no_grad():
+                for alpha in tqdm(
+                    alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
+                ):
+                    interpolated_model = interpolate_models(current_model_a, current_model_b, alpha, model_arch='allenai/OLMo-7B-hf')
+                    interpolated_model = interpolated_model.half().to(device)
 
-                start_time = time.time()
-                losses = []
+                    start_time = time.time()
+                    losses = []
 
-                for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
-                    input_ids = batch["input_ids"].to(device)
-                    attention_mask = batch["attention_mask"].to(device)
-                    labels = batch["labels"].to(device)
-                    
-                    outputs = interpolated_model(
-                        input_ids=input_ids,
-                        attention_mask=attention_mask,
-                        labels=labels,
-                    )
-                    loss = outputs.loss
-                    losses.append(loss.item())
+                    for batch in tqdm(eval_dataloader, desc=f"\n Evaluating {alpha}"):
+                        input_ids = batch["input_ids"].to(device)
+                        attention_mask = batch["attention_mask"].to(device)
+                        labels = batch["labels"].to(device)
+                        
+                        outputs = interpolated_model(
+                            input_ids=input_ids,
+                            attention_mask=attention_mask,
+                            labels=labels,
+                        )
+                        loss = outputs.loss
+                        losses.append(loss.item())
 
-                loss_mean = sum(losses) / len(losses)
-                print(f"Loss mean: {loss_mean}")
-                end_time = time.time()
-                execution_time = end_time - start_time
-                print(f"Execution time base: {execution_time} seconds")
+                    loss_mean = sum(losses) / len(losses)
+                    print(f"Loss mean: {loss_mean}")
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    print(f"Execution time base: {execution_time} seconds")
 
-                perplexity = math.exp(loss_mean)
-                perplexities.append(perplexity)
+                    perplexity = math.exp(loss_mean)
+                    perplexities.append(perplexity)
 
-                # Move the model back to CPU
-                interpolated_model.to("cpu")
+                    # Move the model back to CPU
+                    interpolated_model.to("cpu")
 
-                # Clear the GPU cache
-                del interpolated_model, input_ids, attention_mask, labels, outputs, loss
-                torch.cuda.empty_cache()
+                    # Clear the GPU cache & collect free memory
+                    del interpolated_model, input_ids, attention_mask, labels, outputs, loss
+                    torch.cuda.empty_cache()
+                    gc.collect()
 
             # split on HF org so we don't get accidental
             # directory error
+            
             model_a_name = model_a_name.split("/")[-1]
             model_b_name = model_b_name.split("/")[-1]
             # Save perplexities and model names to CSV

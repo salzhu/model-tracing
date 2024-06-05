@@ -102,6 +102,8 @@ def interpolate_models(
 
     if model_arch == "meta-llama/Llama-2-7b-hf":
         vocab_size = 32000
+    elif 'olmo' in model_arch.lower():
+        vocab_size = 50304
     else:
         vocab_size = 32000
     for key in state_dict_a:
@@ -122,7 +124,7 @@ def interpolate_models(
             ] + alpha * state_dict_b[key]
 
     model_interpolated = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Llama-2-7b-hf", state_dict=interpolated_state_dict
+        model_arch, state_dict=interpolated_state_dict
     )
     return model_interpolated
 
