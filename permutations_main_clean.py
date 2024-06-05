@@ -29,7 +29,7 @@ def mode_connectivity_wikitext(model_a, model_b, alphas, device='cuda'):
     perplexities = []
 
     for alpha in alphas:
-        interpolated_model = interpolate_models(model_a, model_b, alpha).to(device)
+        interpolated_model = interpolate_models(model_a, model_b, alpha).half().to(device)
 
         loss = evaluate(interpolated_model, dataloader)
         loss_mean = sum(loss) / len(loss)
@@ -44,7 +44,7 @@ def mode_connectivity_wikitext(model_a, model_b, alphas, device='cuda'):
         del interpolated_model, loss
         torch.cuda.empty_cache()
 
-        print("alpha = " + str(alpha) + " | " + str(loss_mean) + " | " + str(math.exp(loss_mean)))
+        # print("alpha = " + str(alpha) + " | " + str(loss_mean) + " | " + str(math.exp(loss_mean)))
 
     return losses, perplexities
 
@@ -57,7 +57,7 @@ def mode_connectivity_generated_text(model_a, model_b, texts_a, texts_b, tokeniz
     perplexities = []
 
     for alpha in alphas:
-        interpolated_model = interpolate_models(model_a, model_b, alpha).to(device)
+        interpolated_model = interpolate_models(model_a, model_b, alpha).half().to(device)
 
         loss_a = evaluate_texts(interpolated_model, tokenizer, texts_a)
         loss_b = evaluate_texts(interpolated_model, tokenizer, texts_b)
@@ -136,7 +136,7 @@ def permutation_tests_generated_text(model_a_name, model_b_name, num_perm, alpha
 
     for i in range(num_perm):
         print()
-        print("Permutation " + str(i+1) + "/" + str(num_perm), flush=True)
+        print("Permutation " + str(i+1) + "/" + str(num_perm), end=" ", flush=True)
 
         mlp_permutation = torch.randperm(11008)
         emb_permutation = torch.randperm(4096)
@@ -148,6 +148,7 @@ def permutation_tests_generated_text(model_a_name, model_b_name, num_perm, alpha
         losses.append(loss)
         l2s.append(l2)
         norm_losses.append(loss - (unperm_losses[0] + unperm_losses[2]) / 2)
+        print(l2, loss, loss - (unperm_losses[0] + unperm_losses[2]) / 2)
 
     return unperm_l2, unperm_loss_midpoint, unperm_norm_loss_midpoint, l2s, losses, norm_losses
 
@@ -181,17 +182,18 @@ def main():
     dictionary = yaml.load(stream, Loader=Loader)
     model_list = dictionary["model_list"]
 
-    filename_l2_results = "/nlp/u/salzhu/permutation_l2_test_results.csv"
-    filename_loss_results = "/nlp/u/salzhu/permutation_loss_test_results.csv"
-    filename_norm_loss_results = "/nlp/u/salzhu/permutation_norm_loss_test_results.csv"
+    filename_l2_results = "/nlp/u/salzhu/permutation_l2_gen_text_results.csv"
+    filename_loss_results = "/nlp/u/salzhu/permutation_loss_gen_text_results.csv"
+    filename_norm_loss_results = "/nlp/u/salzhu/permutation_norm_loss_gen_text_results.csv"
 
     for i in range(len(model_list)):
         for j in range(i+1, len(model_list)):
+            if(i != 0 or j != 9): continue
             print("Starting...")
             time0 = time.time()
             print(model_list[i], model_list[j])
             # unperm_l2, unperm_loss_midpoint, unperm_norm_loss_midpoint, l2s, losses, norm_losses = permutation_tests_wikitext(model_list[i], model_list[j], 9)
-            unperm_l2, unperm_loss_midpoint, unperm_norm_loss_midpoint, l2s, losses, norm_losses = permutation_tests_generated_text(model_list[i], model_list[j], 9)
+            unperm_l2, unperm_loss_midpoint, unperm_norm_loss_midpoint, l2s, losses, norm_losses = permutation_tests_generated_text(model_list[i], model_list[j], 99)
             l2_p_value = p_value(unperm_l2, l2s)
             loss_p_value = p_value(unperm_loss_midpoint, losses)
             norm_loss_p_value = p_value(unperm_norm_loss_midpoint, norm_losses)
