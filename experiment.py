@@ -22,7 +22,7 @@ parser.add_argument('--align',action='store_true')
 
 parser.add_argument('--dataset_id',default="dlwh/wikitext_103_detokenized",type=str)
 parser.add_argument('--block_size',default=512,type=int)
-parser.add_argument('--batch_size',default=4,type=int)
+parser.add_argument('--batch_size',default=1,type=int)
 
 parser.add_argument('--save',default="results.p",type=str)
 parser.add_argument('--seed',default=0,type=int)
