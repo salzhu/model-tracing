@@ -1,3 +1,5 @@
+VOCAB_SIZE = 32000
+
 import torch
 from scipy.optimize import linear_sum_assignment as LAP
 
@@ -24,8 +26,8 @@ def match_emb(base_model,ft_model,i='inp'):
   if i == 'out':
     weight_id = 'lm_head.weight'
 
-  base_wmat = base_model.state_dict()[weight_id].T
-  ft_wmat = ft_model.state_dict()[weight_id].T
+  base_wmat = base_model.state_dict()[weight_id][:VOCAB_SIZE].T
+  ft_wmat = ft_model.state_dict()[weight_id][:VOCAB_SIZE].T
 
   perm = match_wmats(base_wmat,ft_wmat)
   return perm
