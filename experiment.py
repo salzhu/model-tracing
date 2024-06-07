@@ -9,12 +9,12 @@ import argparse
 import pickle
 import timeit
 
-from utils.llama.model import avg_model,permute_model
-from utils.llama.matching import align_model
-from utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
+from tracing.utils.llama.model import avg_model,permute_model
+from tracing.utils.llama.matching import align_model
+from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
 
-from statistics.mc import statistic as mode_stat
-from statistics.cos import statistic as cos_stat
+from tracing.statistics.mc import statistic as mode_stat
+from tracing.statistics.cos import statistic as cos_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
