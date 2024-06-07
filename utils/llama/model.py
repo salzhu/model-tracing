@@ -63,7 +63,7 @@ def avg_transformer_block(model0,model1,i,tmp_model,alpha=0.5,attn=True):
   weights0 = model0.state_dict()
   weights1 = model1.state_dict()
 
-  if attn:
+  if attn is True:
     weights0['model.layers.'+str(i)+'.self_attn.q_proj.weight'] = alpha * weights0['model.layers.'+str(i)+'.self_attn.q_proj.weight'] + (1-alpha) * weights1['model.layers.'+str(i)+'.self_attn.q_proj.weight']
     weights0['model.layers.'+str(i)+'.self_attn.k_proj.weight'] = alpha * weights0['model.layers.'+str(i)+'.self_attn.k_proj.weight'] + (1-alpha) * weights1['model.layers.'+str(i)+'.self_attn.k_proj.weight']
     weights0['model.layers.'+str(i)+'.self_attn.v_proj.weight'] = alpha * weights0['model.layers.'+str(i)+'.self_attn.v_proj.weight'] + (1-alpha) * weights1['model.layers.'+str(i)+'.self_attn.v_proj.weight']
@@ -95,9 +95,14 @@ def avg_output_layer(model0,model1,tmp_model,alpha=0.5):
 
     tmp_model.load_state_dict(weights0)
 
-def avg_model(model0,model1,tmp_model,alpha=0.5,n_blocks=32,attn=True):
+def avg_model(model0,model1,tmp_model,alpha=0.5,n_blocks=32,attn=True,emb=True):
   model1 = copy.deepcopy(model1)
-  avg_embedding_layer(model0,model1,tmp_model,alpha=alpha)
+
+  if emb is True:
+    avg_embedding_layer(model0,model1,tmp_model,alpha=alpha)
+  else:
+    tmp_model.load_state_dict(model0.state_dict())
+  
   for i in range(n_blocks):
     avg_transformer_block(tmp_model,model1,i,tmp_model,alpha=alpha,attn=attn)
   avg_output_layer(tmp_model,model1,tmp_model,alpha=alpha)

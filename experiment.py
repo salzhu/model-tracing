@@ -1,5 +1,6 @@
 MLP_SIZE = 11008
 EMB_SIZE = 4096
+N_BLOCKS = 32
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -11,6 +12,9 @@ import timeit
 from utils.llama.model import avg_model,permute_model
 from utils.llama.matching import align_model
 from utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
+
+from statistics.mc import statistic as mode_stat
+from statistics.cos import statistic as cos_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -27,6 +31,10 @@ parser.add_argument('--batch_size',default=1,type=int)
 parser.add_argument('--save',default="results.p",type=str)
 parser.add_argument('--seed',default=0,type=int)
 parser.add_argument('--token',default="",type=str)
+
+parser.add_argument('--stat',default="mode",type="str")
+parser.add_argument('--attn',action='store_true')
+parser.add_argument('--emb',action='store_true')
 
 args = parser.parse_args()
 
@@ -57,16 +65,19 @@ tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False
 dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",args.block_size,base_tokenizer)
 dataloader = prepare_hf_dataloader(dataset,args.batch_size)
 
+if args.stat == "mode":
+    test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
+if args.stat == "cos":
+    test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+
 results['base loss'] = sum(evaluate(base_model,dataloader))
 results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
-avg_model(base_model,ft_model,tmp_model,attn=False)
-results['non-aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+results['non-aligned avg loss'] = test_stat(base_model,ft_model)
 
 if args.align is True:
     align_model(base_model,ft_model,tmp_model)
-    avg_model(base_model,tmp_model,tmp_model,attn=False)
-    results['aligned avg loss'] = sum(evaluate(tmp_model,dataloader))
+    results['aligned avg loss'] = test_stat(base_model,tmp_model)
 
 end = timeit.default_timer()
 results['time'] = end - start

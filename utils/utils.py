@@ -12,3 +12,9 @@ def pdists(x,y):
     dists = xsum.view(-1,1) + ysum.view(1,-1) - 2 * x@y.T
 
   return dists
+
+def cossim(x,y):
+  with torch.no_grad():
+    similarities = x@y.T / (torch.linalg.norm(x,axis=-1).view(-1,1) * torch.linalg.norm(y,axis=-1).view(1,-1))
+  
+  return similarities
