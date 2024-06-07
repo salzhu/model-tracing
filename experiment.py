@@ -32,7 +32,7 @@ parser.add_argument('--save',default="results.p",type=str)
 parser.add_argument('--seed',default=0,type=int)
 parser.add_argument('--token',default="",type=str)
 
-parser.add_argument('--stat',default="mode",type="str")
+parser.add_argument('--stat',default="mode",type=str)
 parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
 
