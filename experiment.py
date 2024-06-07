@@ -8,6 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import argparse
 import pickle
 import timeit
+import subprocess
 
 from tracing.utils.llama.model import avg_model,permute_model
 from tracing.utils.llama.matching import align_model
@@ -45,6 +46,7 @@ start = timeit.default_timer()
 
 results = {}
 results['args'] =  args
+results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
 torch.manual_seed(args.seed)
 
