@@ -75,11 +75,11 @@ if args.stat == "cos":
 results['base loss'] = sum(evaluate(base_model,dataloader))
 results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
-results['non-aligned avg loss'] = test_stat(base_model,ft_model)
+results['non-aligned test stat'] = test_stat(base_model,ft_model)
 
 if args.align is True:
     align_model(base_model,ft_model,tmp_model)
-    results['aligned avg loss'] = test_stat(base_model,tmp_model)
+    results['aligned test stat'] = test_stat(base_model,tmp_model)
 
 end = timeit.default_timer()
 results['time'] = end - start
