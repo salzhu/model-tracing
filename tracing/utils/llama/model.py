@@ -102,10 +102,10 @@ def avg_model(model0,model1,tmp_model,alpha=0.5,n_blocks=32,attn=True,emb=True):
     avg_embedding_layer(model0,model1,tmp_model,alpha=alpha)
   else:
     tmp_model.load_state_dict(model0.state_dict())
-  
   for i in range(n_blocks):
     avg_transformer_block(tmp_model,model1,i,tmp_model,alpha=alpha,attn=attn)
-  avg_output_layer(tmp_model,model1,tmp_model,alpha=alpha)
+  if emb is True:
+    avg_output_layer(tmp_model,model1,tmp_model,alpha=alpha)
 
 def get_mlp_weights(model,i):
   return model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight']
