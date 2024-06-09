@@ -17,7 +17,7 @@ def pdists(x,y):
 
     dists = xsum.view(-1,1) + ysum.view(1,-1) - 2 * x@y.T
 
-  return dists
+  return dists.cpu()
 
 def cossim(x,y):
   x = x.to("cuda")
