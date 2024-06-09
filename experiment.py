@@ -78,8 +78,8 @@ results['ft loss'] = sum(evaluate(ft_model,dataloader))
 results['non-aligned test stat'] = test_stat(base_model,ft_model)
 
 if args.align is True:
-    align_model(base_model,ft_model,tmp_model)
-    results['aligned test stat'] = test_stat(base_model,tmp_model)
+    align_model(base_model,ft_model,ft_model)
+    results['aligned test stat'] = test_stat(base_model,ft_model)
 
 end = timeit.default_timer()
 results['time'] = end - start
