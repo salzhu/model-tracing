@@ -65,16 +65,10 @@ def main(args):
     tokenizer.pad_token = tokenizer.eos_token
 
     # Scan the directory for JSON files based on the test name argument
-    if args.test_name == 'art':
-        json_dir = f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/{args.test_name}"
-        json_files = glob.glob(f"{json_dir}/*.json")
-        save_dir = f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/results_{args.test_name}"
-        columns_ignored = ['text', 'added', 'id', 'source', 'subdomain']
-    else:
-        columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
-        json_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files_{args.test_name}"
-        json_files = glob.glob(f"{json_dir}/*.json")
-        save_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/results_{args.test_name}"
+    columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+    json_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files_{args.test_name}"
+    json_files = glob.glob(f"{json_dir}/*.json")
+    save_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/results_{args.test_name}"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
