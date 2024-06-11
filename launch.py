@@ -3,6 +3,7 @@ from yaml import load, Loader
 
 import subprocess
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -37,10 +38,13 @@ else:
 
 for base_model in base_models:
     for ft_model in ft_models:
-        job_id = base_model + "<--->" + ft_model
+        job_id = base_model + "---" + ft_model
 
-        log_path = args.save_dir + "logs/" + job_id + ".out"
-        results_path = args.save_dir + "results/" + job_id + ".p"
+        log_path = os.path.join(args.save_dir, "logs", job_id + ".out")
+        results_path = os.path.join(args.save_dir, "results", job_id + ".p")
+
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
         experiment = f"python experiment.py --ft_model_id {ft_model} --base_model_id {base_model} " \
                 f"--token {args.token} --save {results_path}" \
