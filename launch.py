@@ -17,8 +17,8 @@ model_paths = yaml.load(open(args.models, 'r'), Loader=Loader)
 base_models = model_paths["base_models"]
 ft_models = model_paths["ft_models"]
 
-subprocess.run(f"mkdir -p {args.save}/logs")
-subprocess.run(f"mkdir -p {args.save}/results")
+subprocess.run(f"mkdir -p {args.save}/logs",shell=True)
+subprocess.run(f"mkdir -p {args.save}/results",shell=True)
 
 for base_model in base_models:
     for ft_model in ft_models:
