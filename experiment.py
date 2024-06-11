@@ -16,6 +16,7 @@ from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,eval
 
 from tracing.statistics.mc import statistic as mode_stat
 from tracing.statistics.cos import statistic as cos_stat
+from tracing.statistics.emb import statistic as emb_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -79,6 +80,8 @@ if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
 if args.stat == "cos":
     test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+if args.stat == "emb":
+    test_stat = lambda base_model,ft_model : emb_stat(base_model,ft_model)
 
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))
