@@ -13,6 +13,7 @@ parser.add_argument('--save_dir',default="./",type=str)
 parser.add_argument('--token',default="",type=str)
 parser.add_argument('--permute',action='store_true')
 parser.add_argument('--align',action='store_true')
+parser.add_argument('--hi',action='store_true')
 
 args = parser.parse_args()
 
@@ -29,6 +30,11 @@ if args.permute is True:
 else:
     permute = ""
 
+if args.hi is True:
+    priority = " -p high"
+else:
+    priority = ""
+
 for base_model in base_models:
     for ft_model in ft_models:
         job_id = base_model + "<--->" + ft_model
@@ -40,5 +46,5 @@ for base_model in base_models:
                 f"--token {args.token} --save {results_path}" \
                 f"{align}{permute}"
 
-        job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
+        job = f"{args.job_prefix} {priority}  -o {log_path} + '{experiment}'"
         subprocess.run(job,shell=True)
