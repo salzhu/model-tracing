@@ -6,28 +6,16 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
-parser.add_argument('--job_prefix',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
+parser.add_argument('--slurm',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
+parser.add_argument('--python',default="python experiment.py",type=str)
 parser.add_argument('--model_paths',default="model_list.yaml",type=str)
-
 parser.add_argument('--save_dir',default="./",type=str)
-parser.add_argument('--token',default="",type=str)
-parser.add_argument('--permute',action='store_true')
-parser.add_argument('--align',action='store_true')
 
 args = parser.parse_args()
 
 model_paths = yaml.load(open(args.model_paths, 'r'), Loader=Loader)
 base_models = model_paths["base_models"]
 ft_models = model_paths["ft_models"]
-
-if args.align is True:
-    align = " --align"
-else:
-    align = ""
-if args.permute is True:
-    permute = " --permute"
-else:
-    permute = ""
 
 for base_model in base_models:
     for ft_model in ft_models:
@@ -36,9 +24,5 @@ for base_model in base_models:
         log_path = args.save_dir + "logs/" + job_id + ".out"
         results_path = args.save_dir + "results/" + job_id + ".p"
 
-        experiment = f"python experiment.py --ft_model_id {ft_model} --base_model_id {base_model} " \
-                f"--token {args.token} --save {results_path}" \
-                f"{align}{permute}"
-
-        job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
+        job = args.slurm + f" -o {log_path}" + args.python + f"--save {results_path}"
         subprocess.run(job,shell=True)
