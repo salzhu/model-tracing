@@ -41,4 +41,4 @@ for base_model in base_models:
                 f"{align}{permute}"
 
         job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
-        # subprocess.run(job,shell=True)
+        subprocess.run(job,shell=True)
