@@ -46,5 +46,6 @@ for base_model in base_models:
                 f"--token {args.token} --save {results_path}" \
                 f"{align}{permute}"
 
-        job = f"{args.job_prefix} {priority}  -o {log_path} + '{experiment}'"
+        job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
+        print(job)
         subprocess.run(job,shell=True)
