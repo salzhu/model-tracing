@@ -24,5 +24,6 @@ for base_model in base_models:
         log_path = args.save + "logs/" + job_id + ".out"
         results_path = args.save + "results/" + job_id + ".p"
 
-        job = args.slurm + f" -o {log_path} -n {job_id}" + f" '{args.python}" + f" --save {results_path}'"
+        job = args.slurm + f" -o {log_path} -n {job_id}" \
+            f" '{args.python}" + f" --base_model_id {base_model} --ft_model_id {ft_model} --save {results_path}'"
         subprocess.run(job,shell=True)
