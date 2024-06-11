@@ -31,7 +31,7 @@ else:
 
 for base_model in base_models:
     for ft_model in ft_models:
-        job_id = base_model + "_AND_" + ft_model
+        job_id = base_model.replace("/","-") + "_AND_" + ft_model.replace("/","-")
 
         log_path = args.save_dir + "logs/" + job_id + ".out"
         results_path = args.save_dir + "results/" + job_id + ".p"
