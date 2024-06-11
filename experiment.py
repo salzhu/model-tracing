@@ -68,7 +68,7 @@ print("ft model permuted")
 tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
 tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",args.block_size,base_tokenizer)
+dataset = prepare_hf_dataset(args.dataset_id,args.block_size,base_tokenizer)
 dataloader = prepare_hf_dataloader(dataset,args.batch_size)
 
 print("dataset loaded")
