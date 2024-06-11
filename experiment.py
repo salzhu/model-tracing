@@ -37,6 +37,8 @@ parser.add_argument('--stat',default="mode",type=str)
 parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
 
+parser.add_argument('--eval',action='store_true')
+
 args = parser.parse_args()
 
 from huggingface_hub import login
@@ -78,8 +80,9 @@ if args.stat == "mode":
 if args.stat == "cos":
     test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
 
-results['base loss'] = sum(evaluate(base_model,dataloader))
-results['ft loss'] = sum(evaluate(ft_model,dataloader))
+if args.eval is True:
+    results['base loss'] = sum(evaluate(base_model,dataloader))
+    results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
 print("losses evaluated")
 
