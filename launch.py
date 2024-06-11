@@ -46,7 +46,7 @@ for base_model in base_models:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
-        experiment = f"python experiment.py --ft_model_id {ft_model} --base_model_id {base_model} " \
+        experiment = f"python main.py --ft_model_id {ft_model} --base_model_id {base_model} " \
                 f"--token {args.token} --save {results_path}" \
                 f"{align}{permute}"
 
