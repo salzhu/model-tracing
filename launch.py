@@ -8,7 +8,7 @@ import os
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
 parser.add_argument('--job_prefix',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
-parser.add_argument('--model_paths',default="model_list.yaml",type=str)
+parser.add_argument('--model_paths',default="config/model_list.yaml",type=str)
 
 parser.add_argument('--save_dir',default="./",type=str)
 parser.add_argument('--token',default="",type=str)
