@@ -1,9 +1,7 @@
 import torch
 
-from datasets import load_dataset, Dataset
+from datasets import load_dataset
 from accelerate.data_loader import DataLoaderShard
-import transformers
-from transformers import AutoTokenizer
 
 def prepare_hf_dataset(hf_path,block_size,tokenizer,split="test"):
   raw_dataset = load_dataset(hf_path, split=split)
@@ -37,7 +35,6 @@ def evaluate(model,dataloader,device="cuda"):
         )
         loss = outputs.loss
         losses.append(loss)
-        break
 
   model.to("cpu")
   return losses
@@ -57,37 +54,3 @@ def group_texts(examples,block_size):
     }
     result["labels"] = result["input_ids"].copy()
     return result
-
-def generate_texts(model_name, tokenizer, num, max_tokens=20, device="cuda"):
-  pipeline = transformers.pipeline(
-      "text-generation",
-      model=model_name,
-      torch_dtype=torch.float16,
-      device_map=device
-  )
-
-  texts = []
-
-  start = ""
-  for i in range(num):
-    generation = pipeline(start, max_new_tokens = max_tokens, num_return_sequences=1, pad_token_id=tokenizer.eos_token_id, do_sample=True)
-    texts.append(generation[0]['generated_text'])
-
-  pipeline.model.to("cpu")
-  del pipeline.model, pipeline
-  torch.cuda.empty_cache()
-
-  return texts
-
-def evaluate_texts(model, tokenizer, texts, device="cuda"):
-  model.to(device)
-  losses = []
-  for text in texts:
-    inputs = tokenizer(text, return_tensors = "pt").to('cuda')
-    temp = model(input_ids = inputs["input_ids"], labels = inputs["input_ids"]).loss
-    losses.append(temp.item())
-    inputs = inputs.to('cpu')
-    del inputs
-
-  model.to("cpu")
-  return losses
