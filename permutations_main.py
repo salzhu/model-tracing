@@ -37,10 +37,11 @@ def permutations_main(model_a_name, model_b_name, num_perm, alpha_step, filepath
     unperm_l2, a, b = calculate_l2_distance(model_a, model_b)
     unperm_losses, unperm_ppl = unpermuted_mode_connectivity(model_a_name, model_b_name, alpha_step=alpha_step, endpoints=True)
     unperm_loss = unperm_losses[1]
+    print(unperm_l2, unperm_loss, flush=True)
 
     # apply permutations and metrics
     for i in range(num_perm):
-        print("Mode connectivity test " + str(i) + "/" + str(num_perm), end = " ")
+        print("Mode connectivity test " + str(i) + "/" + str(num_perm), flush=True)
         loss, l2 = permuted_mode_connectivity_l2(model_a, model_b, tokenizer_base, alpha_step=alpha_step, end_points=False)
         losses.append(loss[0])
         l2s.append(l2[0])
