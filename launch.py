@@ -31,7 +31,7 @@ else:
 
 for base_model in base_models:
     for ft_model in ft_models:
-        job_id = base_model + "---" + ft_model
+        job_id = base_model + "<--->" + ft_model
 
         log_path = args.save_dir + "logs/" + job_id + ".out"
         results_path = args.save_dir + "results/" + job_id + ".p"
@@ -40,5 +40,5 @@ for base_model in base_models:
                 f"--token {args.token} --save {results_path}" \
                 f"{align}{permute}"
 
-        job = args.job_prefix + f"-o {log_path}" + f"'{experiment}'"
+        job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
         # subprocess.run(job,shell=True)
