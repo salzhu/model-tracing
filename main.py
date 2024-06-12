@@ -3,7 +3,7 @@ EMB_SIZE = 4096
 N_BLOCKS = 32
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, GPTNeoXTokenizerFast
 
 import argparse
 import pickle
@@ -51,13 +51,19 @@ results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode
 torch.manual_seed(args.seed)
 
 base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
-tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
-import ipdb; ipdb.set_trace()
-base_tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, use_fast=False)
+if 'olmo' in args.base_model_id.lower():
+    tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
+    import ipdb; ipdb.set_trace()
+    base_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+else:
+    base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
 ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
-tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
-ft_tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, use_fast=False)
+if 'olmo' in args.ft_model_id.lower():
+    tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
+    ft_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+else:
+    ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
 
 print("base and ft models loaded")
 
