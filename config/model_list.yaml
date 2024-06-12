@@ -1,6 +1,5 @@
 ---
-model_list:
-   - meta-llama/Llama-2-7b-hf
+ft_models:
    - lmsys/vicuna-7b-v1.5
    - codellama/CodeLlama-7b-hf
    - codellama/CodeLlama-7b-Python-hf
@@ -10,10 +9,12 @@ model_list:
    - oh-yeontaek/llama-2-7B-LoRA-assemble
    - lvkaokao/llama2-7b-hf-instruction-lora
    - NousResearch/Nous-Hermes-llama-2-7b
-   - huggyllama/llama-7b
-   - openlm-research/open_llama_7b
    - lmsys/vicuna-7b-v1.1
-   - LLM360/Amber
    - yahma/llama-7b-hf
    - Salesforce/xgen-7b-4k-base
+base_models:
+   - meta-llama/Llama-2-7b-hf
+   - huggyllama/llama-7b
+   - LLM360/Amber
+   - openlm-research/open_llama_7b
    
