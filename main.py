@@ -52,6 +52,7 @@ torch.manual_seed(args.seed)
 
 base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
 tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
+import ipdb; ipdb.set_trace()
 base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
 ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
