@@ -51,9 +51,11 @@ results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode
 torch.manual_seed(args.seed)
 
 base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
+tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
 base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
 ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
+tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
 ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
 
 print("base and ft models loaded")
