@@ -27,3 +27,12 @@ def cossim(x,y):
     similarities = x@y.T / (torch.linalg.norm(x,axis=-1).view(-1,1) * torch.linalg.norm(y,axis=-1).view(1,-1))
   
   return similarities.cpu()
+
+def output_hook(m, inp, op, name, feats):
+    feats[name] = op.detach()
+
+def get_submodule(module, submodule_string):
+    attributes = submodule_string.split('.')
+    for attr in attributes:
+        module = getattr(module, attr)
+    return module
