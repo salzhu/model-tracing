@@ -55,7 +55,7 @@ print("dataset loaded")
 block = get_submodule(model,f"gpt_neox.layers.{args.layer}")
 
 feats,hooks = {},{}
-for layer in ["input_layernorm","post_attention_layernorm","final_layer_norm","mlp.dense_h_to_4h","mlp.dense_4h_to_h"]:
+for layer in ["input_layernorm","post_attention_layernorm","mlp.dense_h_to_4h","mlp.dense_4h_to_h"]:
     layer_hook = lambda m,inp,op : output_hook(m,inp,op,layer,feats)
     get_submodule(block,layer).register_forward_hook(layer_hook)
 
