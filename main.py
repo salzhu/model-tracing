@@ -16,6 +16,7 @@ from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,eval
 
 from tracing.statistics.mc import statistic as mode_stat
 from tracing.statistics.cos import statistic as cos_stat
+from tracing.statistics.emb import statistic as emb_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -36,6 +37,8 @@ parser.add_argument('--token',default="",type=str)
 parser.add_argument('--stat',default="mode",type=str)
 parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
+
+parser.add_argument('--eval',action='store_true')
 
 args = parser.parse_args()
 
@@ -71,7 +74,8 @@ if args.permute is True:
     mlp_permutation = torch.randperm(MLP_SIZE)
     emb_permutation = torch.randperm(EMB_SIZE)
     permute_model(ft_model,ft_model,mlp_permutation,emb_permutation)
-    print("ft model permuted")
+
+print("ft model permuted")
 
 tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
 if 'olmo' in args.base_model_id.lower():
@@ -79,7 +83,7 @@ if 'olmo' in args.base_model_id.lower():
 else:
     tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",args.block_size,base_tokenizer)
+dataset = prepare_hf_dataset(args.dataset_id,args.block_size,base_tokenizer)
 dataloader = prepare_hf_dataloader(dataset,args.batch_size)
 
 print("dataset loaded")
@@ -88,9 +92,12 @@ if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
 if args.stat == "cos":
     test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+if args.stat == "emb":
+    test_stat = lambda base_model,ft_model : emb_stat(base_model,ft_model)
 
-results['base loss'] = sum(evaluate(base_model,dataloader))
-results['ft loss'] = sum(evaluate(ft_model,dataloader))
+if args.eval is True:
+    results['base loss'] = sum(evaluate(base_model,dataloader))
+    results['ft loss'] = sum(evaluate(ft_model,dataloader))
 
 print("losses evaluated")
 

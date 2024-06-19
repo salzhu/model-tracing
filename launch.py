@@ -3,58 +3,30 @@ from yaml import load, Loader
 
 import subprocess
 import argparse
-import os
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
-parser.add_argument('--job_prefix',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
-parser.add_argument('--model_paths',default="config/model_list.yaml",type=str)
-
-parser.add_argument('--save_dir',default="./",type=str)
-parser.add_argument('--token',default="",type=str)
-parser.add_argument('--permute',action='store_true')
-parser.add_argument('--align',action='store_true')
-parser.add_argument('--hi',action='store_true')
+parser.add_argument('--slurm',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
+parser.add_argument('--python',default="python experiment.py",type=str)
+parser.add_argument('--models',default="model_list.yaml",type=str)
+parser.add_argument('--save',default=".",type=str)
 
 args = parser.parse_args()
 
-model_paths = yaml.load(open(args.model_paths, 'r'), Loader=Loader)
+model_paths = yaml.load(open(args.models, 'r'), Loader=Loader)
 base_models = model_paths["base_models"]
 ft_models = model_paths["ft_models"]
 
-if args.align is True:
-    align = " --align"
-else:
-    align = ""
-if args.permute is True:
-    permute = " --permute"
-else:
-    permute = ""
+subprocess.run(f"mkdir -p {args.save}/logs",shell=True)
+subprocess.run(f"mkdir -p {args.save}/results",shell=True)
 
-if args.hi is True:
-    priority = " -p high"
-else:
-    priority = ""
-
-if args.token == "":
-    token = os.environ["HUGGING_FACE_HUB_TOKEN"]
-else:
-    token = args.token
 for base_model in base_models:
     for ft_model in ft_models:
-        # use underscores rather than emdash for slurm
-        job_id = base_model.replace("/","_") + "_AND_" + ft_model.replace("/","_")
+        job_id = base_model.replace("/","-") + "_AND_" + ft_model.replace("/","-")
 
-        log_path = os.path.join(args.save_dir, "logs", job_id + ".out")
-        results_path = os.path.join(args.save_dir, "results", job_id + ".p")
+        log_path = args.save + "/logs/" + job_id + ".out"
+        results_path = args.save + "/results/" + job_id + ".p"
 
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        os.makedirs(os.path.dirname(results_path), exist_ok=True)
-
-        experiment = f"python main.py --ft_model_id {ft_model} --base_model_id {base_model} " \
-                f"--token {token} --save {results_path}" \
-                f"{align}{permute}"
-
-        job = args.job_prefix + f" -o {log_path}" + f" '{experiment}'"
-        print(job)
+        job = args.slurm + f" -o {log_path} -n {job_id}" \
+            f" '{args.python}" + f" --base_model_id {base_model} --ft_model_id {ft_model} --save {results_path}'"
         subprocess.run(job,shell=True)

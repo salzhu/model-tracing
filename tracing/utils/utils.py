@@ -37,6 +37,15 @@ def normalize_trace(trace, alphas):
         trace[i] -= start
     return trace
 
+def output_hook(m, inp, op, name, feats):
+    feats[name] = op.detach()
+
+def get_submodule(module, submodule_string):
+    attributes = submodule_string.split('.')
+    for attr in attributes:
+        module = getattr(module, attr)
+    return module
+
 def plot_trace(losses, alphas, normalize, model_a_name, model_b_name, plot_path):
 
     plt.figure(figsize=(8, 6))
