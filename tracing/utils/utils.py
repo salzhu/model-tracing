@@ -1,5 +1,18 @@
 import torch
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+import os
+
+def manual_seed(seed, fix_cudnn=True):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    if fix_cudnn:
+        torch.backends.cudnn.deterministic = True  # noqa
+        torch.backends.cudnn.benchmark = False  # noqa
 
 def spcor(x,y):
   n = len(x)
@@ -36,6 +49,15 @@ def normalize_trace(trace, alphas):
         trace[i] -= slope * alphas[i]
         trace[i] -= start
     return trace
+
+def output_hook(m, inp, op, name, feats):
+    feats[name] = op.detach()
+
+def get_submodule(module, submodule_string):
+    attributes = submodule_string.split('.')
+    for attr in attributes:
+        module = getattr(module, attr)
+    return module
 
 def plot_trace(losses, alphas, normalize, model_a_name, model_b_name, plot_path):
 
