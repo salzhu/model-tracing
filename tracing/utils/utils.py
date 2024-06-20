@@ -1,5 +1,18 @@
 import torch
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+import os
+
+def manual_seed(seed, fix_cudnn=True):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    if fix_cudnn:
+        torch.backends.cudnn.deterministic = True  # noqa
+        torch.backends.cudnn.benchmark = False  # noqa
 
 def spcor(x,y):
   n = len(x)

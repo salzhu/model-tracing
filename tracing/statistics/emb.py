@@ -4,6 +4,7 @@ import torch
 
 from ..utils.utils import cossim
 
+#TODO what does this function do?
 def statistic(base_model,ft_model):
     base_mat = base_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight'][:VOCAB_SIZE]
     ft_mat = ft_model.state_dict()['model.layers.'+str(i)+'.mlp.gate_proj.weight'][:VOCAB_SIZE]
