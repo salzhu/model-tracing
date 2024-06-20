@@ -14,9 +14,9 @@ def calculate_cos_sim(model1, model2):
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
         elif param1.shape != param2.shape:
             if name1 == "model.embed_tokens.weight" or name1 == "lm_head.weight":
-                # print(
-                #     f"Skipping {name1} because of shape mismatch: {param1.shape} != {param2.shape}"
-                # )
+                print(
+                    f"Skipping {name1} because of shape mismatch: {param1.shape} != {param2.shape}"
+                )
                 continue
             raise ValueError(
                 f"Model parameter shapes do not match for {name1}: {param1.shape} != {param2.shape}"
