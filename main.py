@@ -14,7 +14,7 @@ import os
 from tracing.utils.llama.model import permute_model
 from tracing.utils.olmo.model import permute_model as permute_model_olmo
 from tracing.utils.llama.matching import align_model
-from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
+from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate, load_dolma_programming_datasets
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
@@ -94,8 +94,18 @@ if 'olmo' in args.base_model_id.lower():
 else:
     tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-dataset = prepare_hf_dataset(args.dataset_id,args.block_size,base_tokenizer)
-dataloader = prepare_hf_dataloader(dataset,args.batch_size)
+if args.dataset == "wikitext":
+    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", args.block_size, base_tokenizer)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset.startswith("dolma_"):
+    import ipdb; ipdb.set_trace()
+    language = args.dataset.split("_")[1]
+    columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+    datasets = load_dolma_programming_datasets(language, base_tokenizer, columns_ignored)
+    dataset = datasets[language]
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 print("dataset loaded")
 
