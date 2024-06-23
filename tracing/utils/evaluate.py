@@ -100,8 +100,39 @@ def evaluate(model, dataloader, device: str = "cuda"):
     model.to("cpu")
     return losses
 
+def prepare_aya_dataset(subset: str, language: str, block_size: int, tokenizer: AutoTokenizer):
+    """
+    Prepare the Aya dataset for a specific subset and language.
+    """
+    raw_dataset = load_dataset("CohereForAI/aya_evaluation_suite", subset)
+    filtered_dataset = raw_dataset.filter(lambda example: example['language'] == language)
+    
+    dataset = filtered_dataset.map(
+        lambda examples: tokenize_function(examples, tokenizer),
+        batched=True,
+        remove_columns=filtered_dataset.column_names
+    ).map(
+        lambda examples: group_texts(examples, block_size),
+        batched=True,
+        batch_size=1
+    )
+    
+    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+    return dataset
+
+def tokenize_aya_function(examples, tokenizer: AutoTokenizer):
+    """
+    Tokenize Aya dataset examples.
+    """
+    return tokenizer(examples['inputs'])
+
 def tokenize_function(examples, tokenizer):
-    return tokenizer(examples["text"])
+    if 'text' in examples:
+        return tokenizer(examples['text'])
+    elif 'inputs' in examples:
+        return tokenizer(examples['inputs'])
+    else:
+        raise ValueError("Neither 'text' nor 'inputs' found in examples")
 
 def group_texts(examples,block_size):
     concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
