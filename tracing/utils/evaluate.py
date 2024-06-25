@@ -77,6 +77,21 @@ def load_dolma_programming_datasets(
     combined_dataset = concatenate_datasets(datasets)
     return combined_dataset
 
+def load_generated_datasets(base_model_name, ft_model_name, block_size, tokenizer, columns_ignored):
+
+    json_file_base = "/juice4/scr4/nlp/model-tracing/generations/" + base_model_name.replace("/","-") + "_gentext.json"
+    json_file_ft = "/juice4/scr4/nlp/model-tracing/generations/" + ft_model_name.replace("/","-") + "_gentext.json"
+    dataset_base = prepare_programming_dataset(json_file_base, block_size, tokenizer, columns_ignored)
+    dataset_ft = prepare_programming_dataset(json_file_ft, block_size, tokenizer, columns_ignored)
+
+    datasets = []
+    datasets.append(dataset_base)
+    datasets.append(dataset_ft)
+
+    combined_dataset = concatenate_datasets(datasets)
+
+    return combined_dataset
+
 def prepare_hf_dataloader(dataset, batch_size: int):
     return DataLoaderShard(dataset, batch_size=batch_size)
 

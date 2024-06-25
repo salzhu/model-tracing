@@ -14,7 +14,7 @@ import os
 from tracing.utils.llama.model import permute_model
 from tracing.utils.olmo.model import permute_model as permute_model_olmo
 from tracing.utils.llama.matching import align_model
-from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets
+from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets, load_generated_datasets
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
@@ -116,6 +116,10 @@ elif args.dataset.startswith("m2d2_"):
         raise ValueError("Invalid m2d2 dataset format. Use 'm2d2_testcase' (e.g., 'm2d2_AI')")
     columns_ignored = ['text', 'added', 'id', 'source', 'subdomain']
     dataset = load_m2d2_datasets(test_case, args.block_size, base_tokenizer, columns_ignored)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset == "generated":
+    columns_ignored = ['text']
+    dataset = load_generated_datasets(args.base_model_id, args.ft_model_id, args.block_size, base_tokenizer, columns_ignored)
     dataloader = prepare_hf_dataloader(dataset, args.batch_size)
 
 else:
