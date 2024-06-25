@@ -14,7 +14,7 @@ import os
 from tracing.utils.llama.model import permute_model
 from tracing.utils.olmo.model import permute_model as permute_model_olmo
 from tracing.utils.llama.matching import align_model
-from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
+from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
@@ -31,7 +31,7 @@ parser.add_argument('--ft_model_id',default="lmsys/vicuna-7b-v1.1",type=str)
 parser.add_argument('--permute',action='store_true')
 parser.add_argument('--align',action='store_true')
 
-parser.add_argument('--dataset_id',default="dlwh/wikitext_103_detokenized",type=str)
+parser.add_argument('--dataset',default="wikitext",type=str)
 parser.add_argument('--block_size',default=512,type=int)
 parser.add_argument('--batch_size',default=1,type=int)
 
@@ -44,6 +44,9 @@ parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
 
 parser.add_argument('--eval',action='store_true')
+
+parser.add_argument('--aya_subset', default="aya_human_annotated", type=str, help="Subset of Aya dataset")
+parser.add_argument('--aya_language', default="eng", type=str, help="Language code for Aya dataset")
 
 args = parser.parse_args()
 
@@ -94,8 +97,29 @@ if 'olmo' in args.base_model_id.lower():
 else:
     tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-dataset = prepare_hf_dataset(args.dataset_id,args.block_size,base_tokenizer)
-dataloader = prepare_hf_dataloader(dataset,args.batch_size)
+if args.dataset == "wikitext":
+    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", args.block_size, base_tokenizer)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset == "aya":
+    dataset = prepare_aya_dataset(args.aya_subset, args.aya_language, args.block_size, base_tokenizer)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset.startswith("dolma_"):
+    language = args.dataset.split("_")[1]
+    if not language and language is not None:
+        raise ValueError("Language is an empty string")
+    columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+    dataset = load_dolma_programming_datasets(language, args.block_size, base_tokenizer, columns_ignored)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset.startswith("m2d2_"):
+    test_case = args.dataset.split("_")[1]
+    if not test_case:
+        raise ValueError("Invalid m2d2 dataset format. Use 'm2d2_testcase' (e.g., 'm2d2_AI')")
+    columns_ignored = ['text', 'added', 'id', 'source', 'subdomain']
+    dataset = load_m2d2_datasets(test_case, args.block_size, base_tokenizer, columns_ignored)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 print("dataset loaded")
 
