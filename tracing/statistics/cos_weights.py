@@ -6,7 +6,10 @@ import scipy
 import numpy as np
 from scipy.stats import chi2
 
-def cos_cor_layer(base_model,ft_model,layer_name):
+def statistic(base_model, ft_model):
+    return cos_cor_fisher(base_model, ft_model)
+
+def cos_cor_layer_2d(base_model,ft_model,layer_name):
 
     base_mat = base_model.state_dict()[layer_name]
     ft_mat = ft_model.state_dict()[layer_name]
@@ -15,9 +18,7 @@ def cos_cor_layer(base_model,ft_model,layer_name):
 
     orig = torch.arange(len(matched))
 
-    cor2, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
-    print(layer_name, cor2, pvalue)
-
+    cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
     return pvalue
 
 def cos_cor_fisher(model1,model2):
@@ -31,7 +32,6 @@ def cos_cor_fisher(model1,model2):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
         elif base_model.state_dict()[name1].dim() == 1: continue
-        # elif "mlp.down_proj" in name1 or "mlp.up_proj" in name1 or "mlp.gate_proj" in name1: continue
         elif param1.shape != param2.shape:
             if name1 == "model.embed_tokens.weight" or name1 == "lm_head.weight":
                 print(
@@ -42,15 +42,13 @@ def cos_cor_fisher(model1,model2):
                 f"Model parameter shapes do not match for {name1}: {param1.shape} != {param2.shape}"
             )
 
-        pvalue = cos_cor_layer(model1, model2, name1)
+        pvalue = cos_cor_layer_2d(model1, model2, name1)
         chi_squared -= 2 * np.log(pvalue)
         num_layers += 1
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
-    print(chi_squared, p_value)
     return p_value
         
-
 if __name__ == "__main__":
 
     base_model_name = "meta-llama/Llama-2-7b-hf"
@@ -59,6 +57,4 @@ if __name__ == "__main__":
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
 
-    # cos_cor_layer(base_model, ft_model, 'model.layers.'+str(31)+'.mlp.gate_proj.weight')
-
-    cos_cor_fisher(base_model, ft_model)
+    statistic(base_model, ft_model)
