@@ -21,7 +21,6 @@ def cos_cor_layer(base_model,ft_model,layer_name):
     return pvalue
 
 def cos_cor_fisher(model1,model2):
-    # get all layers p value 
 
     chi_squared = 0
     num_layers = 0
