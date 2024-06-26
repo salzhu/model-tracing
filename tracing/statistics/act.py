@@ -11,10 +11,10 @@ def statistic(base_model,ft_model,dataloader,i):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
-    base_model.model.layers[0].input_layernorm.register_forward_hook(base_hook)
+    base_model.model.layers[i].input_layernorm.register_forward_hook(base_hook)
 
     ft_hook = lambda *args : hook(*args,feats,"ft")
-    ft_model.model.layers[0].input_layernorm.register_forward_hook(ft_hook)
+    ft_model.model.layers[i].input_layernorm.register_forward_hook(ft_hook)
 
     evaluate(base_model,dataloader)
     evaluate(ft_model,dataloader)
