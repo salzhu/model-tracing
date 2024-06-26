@@ -97,7 +97,7 @@ def load_generated_datasets(base_model_name, ft_model_name):
 if __name__ == "__main__":
 
     base_model_name = "meta-llama/Llama-2-7b-hf"
-    ft_model_name = "lmsys/vicuna-7b-v1.1" # "huggyllama/llama-7b" # "codellama/CodeLlama-7b-hf"
+    ft_model_name = "codellama/CodeLlama-7b-hf" # "lmsys/vicuna-7b-v1.1" # "huggyllama/llama-7b" 
 
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=False)
@@ -118,8 +118,8 @@ if __name__ == "__main__":
     dataloader = prepare_hf_dataloader(dataset, 1)
 
 
-    test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,base_model,dataloader)
-    # test_stat = lambda base_model,ft_model : cossim_stat(base_model,ft_model)
+    # test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,base_model,dataloader)
+    test_stat = lambda base_model,ft_model : cossim_stat(base_model,ft_model)
 
     main(base_model, ft_model, test_stat, 4)
 
