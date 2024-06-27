@@ -4,6 +4,7 @@ from transformers import AutoTokenizer
 import json
 import yaml
 from yaml import Loader
+import os
 
 def generate_texts(model_name, tokenizer, num, max_tokens, device="cuda"):
   pipeline = transformers.pipeline(
@@ -42,27 +43,27 @@ def save_texts(texts, filename):
 
 def main():
 
-    # model_paths = yaml.load(open("model-tracing/config/model_list.yaml", 'r'), Loader=Loader)
-    # base_models = model_paths["base_models"]
-    # ft_models = model_paths["ft_models"]
+    model_paths = yaml.load(open("/nlp/u/salzhu/model-tracing/config/model_list.yaml", 'r'), Loader=Loader)
+    base_models = model_paths["base_models"]
+    ft_models = model_paths["ft_models"]
 
-    base_models = ["meta-llama/Llama-2-7b-hf"]
-    ft_models = ["codellama/CodeLlama-7b-hf"]
+    # base_models = ["meta-llama/Llama-2-7b-hf"]
+    # ft_models = ["codellama/CodeLlama-7b-hf"]
 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 
     for model_name in base_models: 
-        print(model_name)
-        
-        texts = generate_texts(model_name, tokenizer, 10, 2048)
+        print(model_name)        
         file_name = "/juice4/scr4/nlp/model-tracing/generations/long/" + model_name.replace("/","-") + "_gentext.json"
+        if(os.path.exists(file_name)): continue
+        texts = generate_texts(model_name, tokenizer, 10, 2048)
         save_texts(texts, file_name)
 
     for model_name in ft_models: 
         print(model_name)
-        
-        texts = generate_texts(model_name, tokenizer, 10, 2048)
         file_name = "/juice4/scr4/nlp/model-tracing/generations/long/" + model_name.replace("/","-") + "_gentext.json"
+        if(os.path.exists(file_name)): continue
+        texts = generate_texts(model_name, tokenizer, 10, 2048)
         save_texts(texts, file_name)
 
 if __name__ == "__main__":
