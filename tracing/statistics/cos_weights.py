@@ -31,7 +31,7 @@ def cos_cor_fisher(model1,model2):
     ):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
-        elif base_model.state_dict()[name1].dim() == 1: continue
+        elif param1.dim() == 1: continue
         elif param1.shape != param2.shape:
             if name1 == "model.embed_tokens.weight" or name1 == "lm_head.weight":
                 print(

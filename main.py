@@ -22,6 +22,8 @@ from tracing.statistics.cos import statistic as cos_stat
 from tracing.statistics.emb import statistic as emb_stat
 from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
+from tracing.statistics.cos_weights import statistic as cos_weight_stat
+from tracing.statistics.act import statistic as cos_act_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -129,6 +131,10 @@ print("dataset loaded")
 
 if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
+if args.stat == "cos_weight":
+    test_stat = lambda base_model,ft_model : cos_weight_stat(base_model,ft_model)
+if args.stat == "cos_act":
+    test_stat = lambda base_model,ft_model : cos_act_stat(base_model,ft_model,dataloader)
 
 if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
