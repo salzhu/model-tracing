@@ -17,7 +17,7 @@ def manual_seed(seed, fix_cudnn=True):
 def spcor(x,y):
   n = len(x)
   with torch.no_grad():
-    r = 1 - torch.sum(6 * torch.square(x-y)) / (n * (n - 1))
+    r = 1 - torch.sum(6 * torch.square(x-y)) / (n * (n**2 - 1))
   
   return r
 
@@ -41,6 +41,12 @@ def cossim(x,y):
     similarities = x@y.T / (torch.linalg.norm(x,axis=-1).view(-1,1) * torch.linalg.norm(y,axis=-1).view(1,-1))
   
   return similarities.cpu()
+
+def normalize_mc_midpoint(mid, base, ft):
+   slope = ft - base
+   mid -= slope * 0.5
+   mid -= base
+   return mid
 
 def normalize_trace(trace, alphas):
     slope = trace[-1] - trace[0]

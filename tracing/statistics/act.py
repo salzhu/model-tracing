@@ -97,16 +97,16 @@ def act_spcor_all(base_model, ft_model, dataloader):
 if __name__ == "__main__":
 
     base_model_name = "meta-llama/Llama-2-7b-hf"
-    ft_model_name = "lmsys/vicuna-7b-v1.1" # "codellama/CodeLlama-7b-hf"
+    ft_model_name = "codellama/CodeLlama-7b-hf" # "lmsys/vicuna-7b-v1.1"
 
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=False)
     ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
 
-    # dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",N_BLOCKS,base_tokenizer)
+    # dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer)
     # dataloader = prepare_hf_dataloader(dataset,1)
 
-    dataset = load_generated_datasets(base_model_name, ft_model_name, N_BLOCKS, base_tokenizer, ["text"])
+    dataset = load_generated_datasets(base_model_name, ft_model_name, 512, base_tokenizer, ["text"])
     dataloader = prepare_hf_dataloader(dataset, 1)
 
     print(act_spcor(base_model, ft_model, dataloader))

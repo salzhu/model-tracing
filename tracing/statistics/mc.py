@@ -9,4 +9,5 @@ def statistic(base_model,ft_model,tmp_model,dataloader,attn=False,emb=False):
         avg_model_olmo(base_model,ft_model,tmp_model,attn=attn,emb=emb)
     else:
         avg_model(base_model,ft_model,tmp_model,attn=attn,emb=emb)
-    return sum(evaluate(tmp_model,dataloader))
+    blah = evaluate(tmp_model,dataloader)
+    return sum(blah), len(blah)
