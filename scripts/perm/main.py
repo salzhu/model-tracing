@@ -42,14 +42,14 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
     base_metric = None
     ft_metric = None
 
-    if normalize:
-        base_metric = test_stat(base_model, base_model)
-        ft_metric = test_stat(ft_model, ft_model)
+    # if normalize:
+    #     base_metric = test_stat(base_model, base_model)
+    #     ft_metric = test_stat(ft_model, ft_model)
 
-    unperm_stat = test_stat(base_model,ft_model)
+    unperm_stat, _ = test_stat(base_model,ft_model)
 
-    if normalize:
-        unperm_stat = normalize_mc_midpoint(unperm_stat, base_metric, ft_metric)
+    # if normalize:
+    #     unperm_stat = normalize_mc_midpoint(unperm_stat, base_metric, ft_metric)
 
     print(unperm_stat)
 
@@ -61,13 +61,13 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
 
         permute_model(ft_model, mlp_permutation, emb_permutation)
 
-        perm_stat = test_stat(base_model, ft_model)
+        perm_stat, count = test_stat(base_model, ft_model)
 
         if normalize:
             perm_stat = normalize_mc_midpoint(perm_stat, base_metric, ft_metric)
 
         perm_stats.append(perm_stat)
-        print(perm_stat)
+        print(perm_stat, count)
 
     print(perm_stats)
     p_value_1 = p_value_exact(unperm_stat, perm_stats)
@@ -81,16 +81,20 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
 def load_generated_datasets(base_model_name, ft_model_name):
     columns_ignored = ["text"]
 
-    json_file_base = "/juice4/scr4/nlp/model-tracing/generations/" + base_model_name.replace("/","-") + "_gentext.json"
-    json_file_ft = "/juice4/scr4/nlp/model-tracing/generations/" + ft_model_name.replace("/","-") + "_gentext.json"
-    dataset_base = prepare_programming_dataset(json_file_base, N_BLOCKS, base_tokenizer, columns_ignored)
-    dataset_ft = prepare_programming_dataset(json_file_ft, N_BLOCKS, base_tokenizer, columns_ignored)
+    json_file_base = "/juice4/scr4/nlp/model-tracing/generations/long/" + base_model_name.replace("/","-") + "_gentext.json"
+    json_file_ft = "/juice4/scr4/nlp/model-tracing/generations/long/" + ft_model_name.replace("/","-") + "_gentext.json"
+    dataset_base = prepare_programming_dataset(json_file_base, 512, base_tokenizer, columns_ignored)
+    dataset_ft = prepare_programming_dataset(json_file_ft, 512, base_tokenizer, columns_ignored)
 
     datasets = []
     datasets.append(dataset_base)
     datasets.append(dataset_ft)
 
+    print(datasets)
+
     combined_dataset = concatenate_datasets(datasets)
+
+    print(combined_dataset)
 
     return combined_dataset
 
@@ -118,9 +122,9 @@ if __name__ == "__main__":
     dataloader = prepare_hf_dataloader(dataset, 1)
 
 
-    # test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,base_model,dataloader)
-    test_stat = lambda base_model,ft_model : cossim_stat(base_model,ft_model)
+    test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,base_model,dataloader)
+    # test_stat = lambda base_model,ft_model : cossim_stat(base_model,ft_model)
 
-    main(base_model, ft_model, test_stat, 4)
+    main(base_model, ft_model, test_stat, 9)
 
     
