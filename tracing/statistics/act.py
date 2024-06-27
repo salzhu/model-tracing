@@ -109,6 +109,8 @@ def act_spcor(base_model, ft_model, dataloader):
     evaluate(base_model,dataloader)
     evaluate(ft_model,dataloader)
 
+    p_values = []
+
     for i in range(32):
 
         base_mat = torch.vstack(feats[f'base_{i}']).view(-1,4096).T
@@ -118,12 +120,13 @@ def act_spcor(base_model, ft_model, dataloader):
         orig = torch.arange(len(matched))
 
         cor, temp = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
-        print(i, cor, temp)
+        # print(i, cor, temp)
         chi_squared -= 2 * np.log(temp)
+        p_values.append(temp)
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
 
-    return p_value
+    return p_value, p_values
 
 
 if __name__ == "__main__":
@@ -134,8 +137,6 @@ if __name__ == "__main__":
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=False)
     ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
-
-    print(base_model.state_dict().keys())
 
     # dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer)
     # dataloader = prepare_hf_dataloader(dataset,1)

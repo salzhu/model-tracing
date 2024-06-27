@@ -26,6 +26,8 @@ def cos_cor_fisher(model1,model2):
     chi_squared = 0
     num_layers = 0
 
+    p_values = []
+
     for (name1, param1), (name2, param2) in zip(
         model1.named_parameters(), model2.named_parameters()
     ):
@@ -45,9 +47,10 @@ def cos_cor_fisher(model1,model2):
         pvalue = cos_cor_layer_2d(model1, model2, name1)
         chi_squared -= 2 * np.log(pvalue)
         num_layers += 1
+        p_values.append(pvalue)
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
-    return p_value
+    return p_value, p_values
         
 if __name__ == "__main__":
 
