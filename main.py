@@ -24,6 +24,7 @@ from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
 from tracing.statistics.cos_weights import statistic as cos_weight_stat
 from tracing.statistics.act import statistic as cos_act_stat
+from scripts.perm.main import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -44,6 +45,7 @@ parser.add_argument('--token',default="",type=str)
 parser.add_argument('--stat',default="mode",type=str)
 parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
+parser.add_argument('--num_perm',default=99,type=int)
 
 parser.add_argument('--eval',action='store_true')
 
@@ -144,6 +146,11 @@ if args.stat == "jsd":
     test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)
 if args.stat == "emb":
     test_stat = lambda base_model,ft_model : emb_stat(base_model,ft_model)
+
+if args.stat == "perm_mc_l2":
+    mc = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
+    l2 = lambda base_model,ft_model : l2_stat(base_model,ft_model)
+    test_stat = lambda base_model,ft_model : perm_mc_l2_stat(base_model,ft_model,mc,l2,args.num_perm)
 
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))
