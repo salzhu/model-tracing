@@ -38,7 +38,8 @@ def p_value_approx(unpermuted, permuted):
 
     zscore = (unpermuted - mean) / std
     
-    return scipy.stats.norm.sf(abs(zscore))
+    # return scipy.stats.norm.sf(abs(zscore))
+    return zscore
 
 def statistic(base_model, ft_model, mc_stat, l2_stat, num_perm, normalize=False):
 
