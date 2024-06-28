@@ -17,4 +17,4 @@ base_models:
    - huggyllama/llama-7b
    - LLM360/Amber
    - openlm-research/open_llama_7b
-   
+   - ibm-granite/granite-7b-base
