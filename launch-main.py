@@ -7,7 +7,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
 parser.add_argument('--slurm',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
-parser.add_argument('--python',default="python experiment.py",type=str)
+parser.add_argument('--python',default="python experiment-main.py",type=str)
 parser.add_argument('--models',default="model_list.yaml",type=str)
 parser.add_argument('--save',default=".",type=str)
 
