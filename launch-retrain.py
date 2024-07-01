@@ -17,7 +17,7 @@ args = parser.parse_args()
 for layer in range(args.n_blocks):
     save_dir = f"{args.save}/layer_{layer}"
     subprocess.run(f"mkdir -p {save_dir}",shell=True)
-    job_id = args.model_id.replace("/","-") + "_layer_" + layer
+    job_id = args.model_id.replace("/","-") + f"_layer_{layer}"
 
     log_path = f"{save_dir}/log.out"
 
