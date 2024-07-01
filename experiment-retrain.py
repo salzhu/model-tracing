@@ -18,11 +18,15 @@ parser = argparse.ArgumentParser(description="Experiment Settings")
 parser.add_argument('--model_id',default="lmsys/vicuna-7b-v1.5",type=str)
 parser.add_argument('--layer',default=0,type=int)
 parser.add_argument('--width_factor',default=2.0,type=float)
+
 parser.add_argument('--batch_size',default=1024,type=int)
 parser.add_argument('--n_batches',default=100000,type=int)
 parser.add_argument('--learning_rate',default=0.001,type=float)
+
 parser.add_argument('--save',default=".",type=str)
 parser.add_argument('--token',default="",type=str)
+parser.add_argument('--seed',default=0,type=int)
+
 
 args = parser.parse_args()
 
