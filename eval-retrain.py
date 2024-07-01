@@ -40,7 +40,7 @@ start = timeit.default_timer()
 torch.manual_seed(args.seed)
 
 model = AutoModelForCausalLM.from_pretrained(args.model_id, torch_dtype=torch.bfloat16)
-tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
+tokenizer = AutoTokenizer.from_pretrained(args.model_id, use_fast=False)
 config = AutoConfig.from_pretrained(args.model_id)
 
 config.intermediate_size = int(args.width_factor * MLP_SIZE)
