@@ -23,6 +23,9 @@ parser.add_argument('--batch_size',default=1024,type=int)
 parser.add_argument('--n_batches',default=100000,type=int)
 parser.add_argument('--learning_rate',default=0.001,type=float)
 
+parser.add_argument('--ckpt_freq',default=10000,type=int)
+parser.add_argument('--log_freq',default=500,type=int)
+
 parser.add_argument('--save',default=".",type=str)
 parser.add_argument('--token',default="",type=str)
 parser.add_argument('--seed',default=0,type=int)
@@ -70,10 +73,10 @@ for t in range(1,args.n_batches+1):
     loss.backward()
     optimizer.step()
     
-    if t % 500 == 0:
+    if t % args.log_freq == 0:
         print(f"loss at iteration {t}: {loss.item()}")
         results["losses"].append(loss.item())
-    if t % 10000 == 0:
+    if t % args.ckpt_freq == 0:
         print("saving checkpoint")
         pickle.dump(student.state_dict(),open(f"{args.save}/ckpts/ckpt_{t}.p","wb"))
 
