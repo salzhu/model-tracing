@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description="Experiment Settings")
 parser.add_argument('--model_id',default="lmsys/vicuna-7b-v1.5",type=str)
 parser.add_argument('--width_factor',default=2.0,type=float)
 
-parser.add_argument('--ckpt',default=0,type=int)
+parser.add_argument('--ckpt',default=50000,type=int)
 parser.add_argument('--load',default=".",type=str)
 
 parser.add_argument('--dataset_id',default="dlwh/wikitext_103_detokenized",type=str)
@@ -39,6 +39,7 @@ start = timeit.default_timer()
 torch.manual_seed(args.seed)
 
 model = AutoModelForCausalLM.from_pretrained(args.model_id, torch_dtype=torch.bfloat16)
+tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 config = AutoConfig.from_pretrained(args.model_id)
 
 config.intermediate_size = int(args.width_factor * MLP_SIZE)
@@ -49,9 +50,13 @@ for i in range(N_BLOCKS):
     mlp_state_dict = pickle.load(open(f"{args.load}/layer_{i}/ckpts/ckpt_{args.ckpt}.p","rb"))
     set_mlp_weights(ret_model,i,mlp_state_dict)
 
+    results = pickle.load(open(f"{args.load}/layer_{i}/results.p","rb"))
+    print(f"initial loss for layer {i}: {results["losses"][0]}")
+    print(f"final loss for layer {i}: {results["losses"][-1]}")
+
 print("models loaded")
 
-dataset = prepare_hf_dataset(args.dataset_id,args.block_size,base_tokenizer)
+dataset = prepare_hf_dataset(args.dataset_id,args.block_size,tokenizer)
 dataloader = prepare_hf_dataloader(dataset,args.batch_size)
 
 print("dataset loaded")
