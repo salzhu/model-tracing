@@ -48,7 +48,7 @@ config.intermediate_size = int(args.width_factor * MLP_SIZE)
 print("model loaded")
 
 teacher = model.model.layers[args.layer].mlp.to("cuda")
-student = LlamaMLP(config).to("cuda")
+student = LlamaMLP(config).bfloat16().to("cuda")
 
 print("starting training")
 
