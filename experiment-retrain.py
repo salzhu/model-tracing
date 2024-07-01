@@ -22,6 +22,7 @@ parser.add_argument('--batch_size',default=1024,type=int)
 parser.add_argument('--n_batches',default=100000,type=int)
 parser.add_argument('--learning_rate',default=0.001,type=float)
 parser.add_argument('--save',default=".",type=str)
+parser.add_argument('--token',default="",type=str)
 
 args = parser.parse_args()
 
