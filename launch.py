@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description="Experiment Settings")
 parser.add_argument('--slurm',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
 parser.add_argument('--python',default="python experiment.py",type=str)
 parser.add_argument('--models',default="config/llama_flat.yaml",type=str)
-parser.add_argument('--save',default=".",type=str)
+parser.add_argument('--save',default="/juice4/scr4/nlp/model-tracing",type=str)
 parser.add_argument('--flat',default=True,type=bool)
 
 args = parser.parse_args()
