@@ -59,7 +59,7 @@ results["losses"] = []
 subprocess.run(f"mkdir -p {args.save}/ckpts",shell=True)
 
 for t in range(1,args.n_batches+1):
-    X_batch = torch.randn(size=(args.batch_size,MLP_SIZE),dtype=torch.bfloat16,device="cuda")
+    X_batch = torch.randn(size=(args.batch_size,EMB_SIZE),dtype=torch.bfloat16,device="cuda")
     with torch.no_grad():
         Y_batch = teacher(X_batch)
     
