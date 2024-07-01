@@ -79,8 +79,8 @@ def load_dolma_programming_datasets(
 
 def load_generated_datasets(base_model_name, ft_model_name, block_size, tokenizer, columns_ignored):
 
-    json_file_base = "/juice4/scr4/nlp/model-tracing/generations/long/" + base_model_name.replace("/","-") + "_gentext.json"
-    json_file_ft = "/juice4/scr4/nlp/model-tracing/generations/long/" + ft_model_name.replace("/","-") + "_gentext.json"
+    json_file_base = "/juice4/scr4/nlp/model-tracing/generations/" + base_model_name.replace("/","-") + "_gentext.json"
+    json_file_ft = "/juice4/scr4/nlp/model-tracing/generations/" + ft_model_name.replace("/","-") + "_gentext.json"
     dataset_base = prepare_programming_dataset(json_file_base, block_size, tokenizer, columns_ignored)
     dataset_ft = prepare_programming_dataset(json_file_ft, block_size, tokenizer, columns_ignored)
 

@@ -14,9 +14,12 @@ ft_models:
    - Salesforce/xgen-7b-4k-base
    - EleutherAI/llemma_7b_muinstruct_camelmath
    - AlfredPros/CodeLlama-7b-Instruct-Solidity
+   - LLM360/AmberChat
+   - ibm-granite/granite-7b-instruct
 base_models:
    - meta-llama/Llama-2-7b-hf
    - huggyllama/llama-7b
    - LLM360/Amber
    - openlm-research/open_llama_7b
+   - openlm-research/open_llama_7b_v2
    - ibm-granite/granite-7b-base

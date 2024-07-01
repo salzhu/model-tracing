@@ -155,8 +155,7 @@ if args.stat == "perm_mc_l2":
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))
     results['ft loss'] = sum(evaluate(ft_model,dataloader))
-
-print("losses evaluated")
+    print("losses evaluated")
 
 results['non-aligned test stat'] = test_stat(base_model,ft_model)
 
