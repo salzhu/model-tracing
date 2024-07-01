@@ -83,4 +83,4 @@ end = timeit.default_timer()
 results['time'] = end - start
 
 print(results)
-pickle.dump(results,open(args.save,"wb"))
+pickle.dump(results,open(f"{args.save}/results.p","wb"))
