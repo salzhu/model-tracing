@@ -52,8 +52,12 @@ for i in range(N_BLOCKS):
     set_mlp_weights(ret_model,i,mlp_state_dict)
 
     results = pickle.load(open(f"{args.load}/layer_{i}/results.p","rb"))
-    print(f"initial loss for layer {i}: {results["losses"][0]}")
-    print(f"final loss for layer {i}: {results["losses"][-1]}")
+
+    
+    init_loss = results["losses"][0]
+    print(f"initial loss for layer {i}: {init_loss}")
+    final_loss = results["losses"][-1]
+    print(f"final loss for layer {i}: {final_loss}")
 
 print("models loaded")
 
