@@ -74,7 +74,7 @@ for t in range(1,args.n_batches+1):
         print(f"train loss: {loss.item()}")
         results["losses"].append(loss.item())
     if t % 10000 == 0:
-        pickle.dump(student.state_dict(),open(f"{args.save}/ckpts/ckpt_{t}.p"))
+        pickle.dump(student.state_dict(),open(f"{args.save}/ckpts/ckpt_{t}.p","wb"))
 
 end = timeit.default_timer()
 results['time'] = end - start
