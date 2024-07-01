@@ -1,5 +1,5 @@
 # Configuration for M2D2 datasets
-save_dir: "/path/to/save/directory"
+save_dir: "/nlp/scr/ahmedah/trace_results"
 m2d2_json_dir: "/juice4/scr4/nlp/model-tracing/m2d2_s2orc"
 datasets:
   # These categories are derived from the ArXiv ontology
