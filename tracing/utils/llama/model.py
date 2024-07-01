@@ -112,3 +112,16 @@ def get_mlp_weights(model,i):
 
 def get_emb_weights(model):
   return model.state_dict()['model.embed_tokens.weight']
+
+def set_mlp_weights(model,i,state_dict):
+   model.model.layers[i].mlp.load_state_dict(state_dict)
+
+def set_weights(model,state_dict,include_mlp=False):
+  model_state_dict = model.state_dict()
+  for name in state_dict:
+    if "mlp" not in name or include_mlp is True:
+      model_state_dict[name] = state_dict[name]
+  
+  model.load_state_dict(model_state_dict)
+  
+      
