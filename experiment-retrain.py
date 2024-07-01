@@ -71,10 +71,13 @@ for t in range(1,args.n_batches+1):
     optimizer.step()
     
     if t % 500 == 0:
-        print(f"train loss: {loss.item()}")
+        print(f"loss at iteration {t}: {loss.item()}")
         results["losses"].append(loss.item())
     if t % 10000 == 0:
+        print("saving checkpoint")
         pickle.dump(student.state_dict(),open(f"{args.save}/ckpts/ckpt_{t}.p","wb"))
+
+print("training done")
 
 end = timeit.default_timer()
 results['time'] = end - start
