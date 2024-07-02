@@ -4,6 +4,8 @@ from yaml import load, Loader
 import subprocess
 import argparse
 
+import os
+
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
 parser.add_argument('--slurm',default="nlprun -g 1 -d a6000 -r 80G -a model-tracing",type=str)
@@ -18,6 +20,8 @@ model_paths = yaml.load(open(args.models, 'r'), Loader=Loader)
 
 subprocess.run(f"mkdir -p {args.save}/logs",shell=True)
 subprocess.run(f"mkdir -p {args.save}/results",shell=True)
+
+# model_paths = ["meta-llama/Llama-2-7b-hf", "codellama/CodeLlama-7b-hf"]
 
 if args.flat:
     for i in range(len(model_paths)):
