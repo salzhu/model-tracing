@@ -126,6 +126,9 @@ def act_spcor(base_model, ft_model, dataloader):
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
 
+    print(p_value)
+    print(p_values)
+
     return p_value, p_values
 
 

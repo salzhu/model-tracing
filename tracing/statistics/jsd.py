@@ -1,5 +1,10 @@
 import torch
 import torch.nn.functional as F
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from tracing.utils.evaluate import evaluate
+from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader, prepare_programming_dataset, load_generated_datasets
+
 
 def statistic(base_model, ft_model, dataloader, device="cuda"):
     return compute_jsd(base_model, ft_model, dataloader, device)
@@ -44,10 +49,11 @@ def compute_jsd(base_model, ft_model, dataloader, device="cuda"):
             jsd = 0.5 * (F.kl_div(m.log(), softmax_base) +
                          F.kl_div(m.log(), softmax_ft))
 
-            jsds.append(jsd)
+            jsds.append(jsd.item())
 
     base_model.to("cpu")
     ft_model.to("cpu")
+    print(sum(jsds))
     return sum(jsds)
 
 def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
@@ -99,3 +105,18 @@ def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
     ft_model.to("cpu")
 
     return sum(jsds)
+
+
+if __name__ == "__main__":
+
+    base_model_name = "meta-llama/Llama-2-7b-hf" # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5' 
+    ft_model_name = "codellama/CodeLlama-7b-hf" # 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1"
+
+    base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
+    ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
+    base_tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=False)
+
+    dataset = load_generated_datasets(base_model_name, ft_model_name, 512, base_tokenizer, ["text"])
+    dataloader = prepare_hf_dataloader(dataset, 1)
+
+    print(statistic(base_model, ft_model, dataloader))
