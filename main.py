@@ -14,7 +14,7 @@ import os
 from tracing.utils.llama.model import permute_model
 from tracing.utils.olmo.model import permute_model as permute_model_olmo
 from tracing.utils.llama.matching import align_model
-from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets, load_generated_datasets
+from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets, load_generated_datasets, prepare_random_sample_dataset
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
@@ -74,6 +74,10 @@ base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtyp
 if 'olmo' in args.base_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
     base_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+elif 'Alfred' in args.base_model_id:
+    base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id)
+elif 'Salesforce' in args.base_model_id:
+    base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id,trust_remote_code=True)
 else:
     base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
@@ -81,6 +85,10 @@ ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=to
 if 'olmo' in args.ft_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
     ft_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+elif 'Alfred' in args.ft_model_id:
+    ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id)
+elif 'Salesforce' in args.ft_model_id:
+    ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id,trust_remote_code=True)
 else:
     ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
 
@@ -98,6 +106,10 @@ if args.permute is True:
 tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
 if 'olmo' in args.base_model_id.lower():
     tmp_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+elif 'Alfred' in args.base_model_id:
+    tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id)
+elif 'Salesforce' in args.base_model_id:
+    tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id,trust_remote_code=True)
 else:
     tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
@@ -124,6 +136,9 @@ elif args.dataset.startswith("m2d2_"):
 elif args.dataset == "generated":
     columns_ignored = ['text']
     dataset = load_generated_datasets(args.base_model_id, args.ft_model_id, args.block_size, base_tokenizer, columns_ignored)
+    dataloader = prepare_hf_dataloader(dataset, args.batch_size)
+elif args.dataset == "random":
+    dataset = prepare_random_sample_dataset(1, args.block_size)
     dataloader = prepare_hf_dataloader(dataset, args.batch_size)
 
 else:
