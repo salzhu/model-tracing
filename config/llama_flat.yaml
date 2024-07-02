@@ -14,7 +14,6 @@
    - EleutherAI/llemma_7b_muinstruct_camelmath
    - AlfredPros/CodeLlama-7b-Instruct-Solidity
    - meta-llama/Llama-2-7b-hf
-   - huggyllama/llama-7b
    - LLM360/Amber
    - LLM360/AmberChat
    - openlm-research/open_llama_7b
