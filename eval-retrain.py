@@ -70,7 +70,7 @@ print(f"loss of original model: {sum(evaluate(model,dataloader))}")
 print(f"loss of retrained model: {sum(evaluate(ret_model,dataloader))}")
 
 for i in range(N_BLOCKS):
-    print(f"cosine similarity of activations in layer {i}: {stat(model,ret_model,dataloader,i)}")
+    print(f"cosine similarity of activations in layer {i}: {stat(model,ret_model,i)}")
 
 end = timeit.default_timer()
 
