@@ -19,7 +19,7 @@ def statistic(base_model,ft_model,dataloader,i):
     evaluate(base_model,dataloader)
     evaluate(ft_model,dataloader)
 
-    base_mat = torch.vstack(feats['base']).view(-1,4096).T
-    ft_mat = torch.vstack(feats['ft']).view(-1,4096).T
+    base_mat = torch.vstack(feats['base']).view(-1,base_mat.shape[-1]).T
+    ft_mat = torch.vstack(feats['ft']).view(-1,ft_mat.shape[-1]).T
     
     return torch.median(torch.max(cossim(base_mat,ft_mat),axis=-1).values)
