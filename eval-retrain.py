@@ -13,7 +13,7 @@ import subprocess
 
 from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader,evaluate
 from tracing.utils.llama.model import set_mlp_weights,set_weights
-from tracing.statistics.act import statistic as act_stat
+from tracing.statistics.mlp import statistic as stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -70,7 +70,7 @@ print(f"loss of original model: {sum(evaluate(model,dataloader))}")
 print(f"loss of retrained model: {sum(evaluate(ret_model,dataloader))}")
 
 for i in range(N_BLOCKS):
-    print(f"cosine similarity of activations in layer {i}: {act_stat(model,ret_model,dataloader,i)}")
+    print(f"cosine similarity of activations in layer {i}: {stat(model,ret_model,dataloader,i)}")
 
 end = timeit.default_timer()
 
