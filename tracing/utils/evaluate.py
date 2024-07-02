@@ -2,7 +2,7 @@ import torch
 import os
 import glob
 from typing import List, Optional
-from datasets import load_dataset, concatenate_datasets
+from datasets import load_dataset, concatenate_datasets, Dataset
 from accelerate.data_loader import DataLoaderShard
 from transformers import AutoTokenizer
 
@@ -33,6 +33,14 @@ def prepare_programming_dataset(json_path: str, block_size: int, tokenizer: Auto
         batch_size=1,
         num_proc=1
     )
+    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+    return dataset
+
+def prepare_random_sample_dataset(num_samples, block_size):
+    tokens = torch.randint(low=0,high=32000,size=(num_samples,block_size))
+    dictionary = {"input_ids": tokens, "attention_mask": torch.ones(tokens.shape), "labels": tokens}
+
+    dataset = Dataset.from_dict(dictionary)
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     return dataset
 
