@@ -113,6 +113,9 @@ elif 'Salesforce' in args.base_model_id:
 else:
     tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
+if 'Salesforce' in args.base_model_id: 
+    base_tokenizer = ft_tokenizer
+
 if args.dataset == "wikitext":
     dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", args.block_size, base_tokenizer)
     dataloader = prepare_hf_dataloader(dataset, args.batch_size)
