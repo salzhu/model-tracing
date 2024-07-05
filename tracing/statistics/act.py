@@ -121,7 +121,10 @@ def act_spcor(base_model, ft_model, dataloader):
 
         cor, temp = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
         # print(i, cor, temp)
-        chi_squared -= 2 * np.log(temp)
+
+        if not np.isnan(temp):
+            chi_squared -= 2 * np.log(temp)
+            num_layers += 1
         p_values.append(temp)
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
