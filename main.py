@@ -73,10 +73,7 @@ results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode
 manual_seed(args.seed)
 
 dtype = torch.bfloat16
-if '70b' in args.base_model_id:
-    base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, quantization_config=BitsAndBytesConfig(load_in_8bit=True), device_map="cuda:0")
-else:
-    base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
+base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
 if 'olmo' in args.base_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
     base_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
@@ -87,11 +84,7 @@ elif 'Salesforce' in args.base_model_id:
 else:
     base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-if '70b' in args.base_model_id.lower() and '70b' in args.ft_model_id.lower():
-    print(f'70b ft model')
-    ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id,quantization_config=BitsAndBytesConfig(load_in_8bit=True), device_map="cuda:1")
-else:
-    ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=dtype)
+ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=dtype)
 if 'olmo' in args.ft_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
     ft_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
