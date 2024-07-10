@@ -3,7 +3,7 @@ EMB_SIZE = 4096
 N_BLOCKS = 32
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, GPTNeoXTokenizerFast
+from transformers import AutoTokenizer, AutoModelForCausalLM, GPTNeoXTokenizerFast, BitsAndBytesConfig
 
 import argparse
 import pickle
@@ -40,12 +40,14 @@ parser.add_argument('--batch_size',default=1,type=int)
 
 parser.add_argument('--save',default="results.p",type=str)
 parser.add_argument('--seed',default=0,type=int)
+parser.add_argument('--alpha',default=0.5,type=float)
 parser.add_argument('--token',default="",type=str)
 
 parser.add_argument('--stat',default="mode",type=str)
 parser.add_argument('--attn',action='store_true')
 parser.add_argument('--emb',action='store_true')
 parser.add_argument('--num_perm',default=99,type=int)
+
 
 parser.add_argument('--eval',action='store_true')
 
@@ -70,7 +72,11 @@ results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode
 # fix seed on torch, np and random
 manual_seed(args.seed)
 
-base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
+dtype = torch.bfloat16
+if '70b' in args.base_model_id:
+    base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, quantization_config=BitsAndBytesConfig(load_in_8bit=True), device_map="cuda:0")
+else:
+    base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
 if 'olmo' in args.base_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
     base_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
@@ -81,7 +87,11 @@ elif 'Salesforce' in args.base_model_id:
 else:
     base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
-ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=torch.bfloat16)
+if '70b' in args.base_model_id.lower() and '70b' in args.ft_model_id.lower():
+    print(f'70b ft model')
+    ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id,quantization_config=BitsAndBytesConfig(load_in_8bit=True), device_map="cuda:1")
+else:
+    ft_model = AutoModelForCausalLM.from_pretrained(args.ft_model_id, torch_dtype=dtype)
 if 'olmo' in args.ft_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.ft_model_id.lower() else args.ft_model_id
     ft_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
@@ -103,7 +113,11 @@ if args.permute is True:
         permute_model(ft_model,ft_model,mlp_permutation,emb_permutation)
     print("ft model permuted")
 
-tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=torch.bfloat16)
+if '70b' in args.base_model_id.lower() and '70b' in args.ft_model_id.lower():
+    # skip tmp_model
+    tmp_model = None
+elif args.stat == "mode":
+    tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
 if 'olmo' in args.base_model_id.lower():
     tmp_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
 elif 'Alfred' in args.base_model_id:
@@ -150,16 +164,17 @@ else:
 print("dataset loaded")
 
 if args.stat == "mode":
-    test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
+    test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb, args.alpha)
+    results['alpha'] = args.alpha
 if args.stat == "cos_weight":
     test_stat = lambda base_model,ft_model : cos_weight_stat(base_model,ft_model)
 if args.stat == "cos_act":
     test_stat = lambda base_model,ft_model : cos_act_stat(base_model,ft_model,dataloader)
-
+    
 if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
 if args.stat == "cos":
-    test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+    test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model, 80)
 if args.stat == "jsd":
     test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)
 if args.stat == "emb":

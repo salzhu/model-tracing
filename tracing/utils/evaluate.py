@@ -103,6 +103,24 @@ def load_generated_datasets(base_model_name, ft_model_name, block_size, tokenize
 def prepare_hf_dataloader(dataset, batch_size: int):
     return DataLoaderShard(dataset, batch_size=batch_size)
 
+def evaluate_70b(model, dataloader, device: str = "cuda:0"):
+    losses = []
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
+
+            outputs = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                labels=labels,
+            )
+            loss = outputs.loss
+            losses.append(loss.item())
+
+    return losses
+
 def evaluate(model, dataloader, device: str = "cuda"):
     losses = []
     model.to(device)

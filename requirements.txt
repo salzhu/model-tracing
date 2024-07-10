@@ -1,4 +1,4 @@
-accelerate==0.29.2
+accelerate==0.31.0
 data_processing==0.1.4
 datasets==2.18.0
 huggingface_hub==0.22.2
