@@ -24,6 +24,8 @@ from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
 from tracing.statistics.cos_weights import statistic as cos_weight_stat
 from tracing.statistics.act import statistic as cos_act_stat
+from tracing.statistics.csh_robust import statistic as csh_robust_stat
+from tracing.statistics.csh_robust import statistic_rand as csh_robust_rand_stat
 from scripts.perm.main import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
@@ -151,15 +153,19 @@ print("dataset loaded")
 
 if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
-if args.stat == "cos_weight":
+if args.stat == "csw_spearman":
     test_stat = lambda base_model,ft_model : cos_weight_stat(base_model,ft_model)
-if args.stat == "cos_act":
+if args.stat == "csh_spearman":
     test_stat = lambda base_model,ft_model : cos_act_stat(base_model,ft_model,dataloader)
 
 if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
-if args.stat == "cos":
+if args.stat == "csw_robust":
     test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+if args.stat == "csh_robust":
+    test_stat = lambda base_model,ft_model : csh_robust_stat(base_model,ft_model,dataloader)
+if args.stat == "csh_robust_mlp_rand":
+    test_stat = lambda base_model,ft_model : csh_robust_rand_stat(base_model,ft_model)
 if args.stat == "jsd":
     test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)
 if args.stat == "emb":

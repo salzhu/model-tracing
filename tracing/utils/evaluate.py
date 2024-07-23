@@ -36,8 +36,8 @@ def prepare_programming_dataset(json_path: str, block_size: int, tokenizer: Auto
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     return dataset
 
-def prepare_random_sample_dataset(num_samples, block_size):
-    tokens = torch.randint(low=0,high=32000,size=(num_samples,block_size))
+def prepare_random_sample_dataset(num_samples, block_size, vocab_size=32000):
+    tokens = torch.randint(low=0,high=vocab_size,size=(num_samples,block_size))
     dictionary = {"input_ids": tokens, "attention_mask": torch.ones(tokens.shape), "labels": tokens}
 
     dataset = Dataset.from_dict(dictionary)
@@ -122,6 +122,22 @@ def evaluate(model, dataloader, device: str = "cuda"):
 
     model.to("cpu")
     return losses
+
+def evaluate_csh_test(model, dataloader, device: str = "cuda"):
+    model.to(device)
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
+
+            outputs = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+            )
+
+    model.to("cpu")
+    return
 
 def prepare_aya_dataset(subset: str, language: str, block_size: int, tokenizer: AutoTokenizer):
     """
