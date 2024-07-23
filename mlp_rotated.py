@@ -17,7 +17,7 @@ from tracing.statistics.jsd import statistic as jsd
 def hook(m, inp, op, feats, name):
     feats[name].append(op.detach().cpu())
 
-def mlp_cshr_for_rotation(base_model,ft_model,i,n=500,emb_size=16,mlp_dim=20):
+def mlp_cshr_per_layer(base_model,ft_model,i,n=500,emb_size=16,mlp_dim=20):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
@@ -91,7 +91,7 @@ def mlp_cshr_bad(base_model,ft_model,i,n=5000,emb_size=16,mlp_dim=20):
     
     return torch.median(torch.max(cossim(base_mat,ft_mat),axis=-1).values).item()
 
-def mlp_cshr_one_input(base_model, ft_model, dataloader, num_layers=32):
+def mlp_cshr_full_model(base_model, ft_model, dataloader, num_layers=32):
 
     feats = defaultdict(list)
 
@@ -173,8 +173,8 @@ def main():
     # print("csw robust: " + str(cswr(model, model_rotated, num_layers)[0]))
     # print("l2: " + str(calculate_l2_distance(model, model_rotated)))
     # print("mlp cshr bad: " + str(mlp_cshr_bad(model, model_rotated, 0)))
-    # print("mlp cshr with random inputs through full model: " + str(mlp_cshr_one_input(model, model_rotated, dataloader, num_layers=num_layers)))
-    # print("mlp cshr with random canonical basis: " + str(mlp_cshr_for_rotation(model, model_rotated, 0)))
+    # print("mlp cshr with random inputs through full model: " + str(mlp_cshr_full_model(model, model_rotated, dataloader, num_layers=num_layers)))
+    # print("mlp cshr with random canonical basis: " + str(mlp_cshr_per_layer(model, model_rotated, 0)))
     print()
 
     rotation = ortho_group.rvs(dim=hidden_dim)
@@ -212,8 +212,8 @@ def main():
     # print("csw robust: " + str(cswr(model, model_rotated, num_layers)[0]))
     # print("l2: " + str(calculate_l2_distance(model, model_rotated)))
     # print("mlp cshr bad: " + str(mlp_cshr_bad(model, model_rotated, 0)))
-    # print("mlp cshr with random inputs through full model: " + str(mlp_cshr_one_input(model, model_rotated, dataloader, num_layers=num_layers)))
-    print("mlp cshr with random canonical basis: " + str(mlp_cshr_for_rotation(model, model_rotated, 0)))
+    # print("mlp cshr with random inputs through full model: " + str(mlp_cshr_full_model(model, model_rotated, dataloader, num_layers=num_layers)))
+    print("mlp cshr with random canonical basis: " + str(mlp_cshr_per_layer(model, model_rotated, 0)))
     
 
     # print(output)
