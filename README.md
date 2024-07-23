@@ -62,7 +62,7 @@ The script accepts various command-line arguments:
 Example usage:
 
 ```bash
-python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset_id dlwh/wikitext_103_detokenized --stat mode --attn --save results.p
+python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat mode --attn --save results.p
 ```
 
 ### `generate.py`
@@ -76,7 +76,6 @@ This script launches multiple experiments in parallel using slurm. It reads mode
 ## Configuration
 
 The `model-tracing/config/model_list.yaml` file defines the base and fine-tuned models for the experiments. 
-
 ## Data
 
 The code downloads and uses the Wikitext 103 dataset for perplexity evaluation.
@@ -92,3 +91,15 @@ The results of the experiments are saved as pickle files. The files contain dict
 - `base loss`: Perplexity of the base model on the evaluation dataset (if `--eval` is True).
 - `ft loss`: Perplexity of the fine-tuned model on the evaluation dataset (if `--eval` is True).
 - `time`: Total execution time of the experiment.
+
+## Sample commands
+
+### 70B runs
+```
+ python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B
+```
+
+### accelerate:
+```
+ accelerate launch --main_process_port 0  main.py --base_model_id meta-llama/Llama-2-70b-chat-hf --ft_model_id meta-llama/Llama-2-70b-chat-hf
+```
