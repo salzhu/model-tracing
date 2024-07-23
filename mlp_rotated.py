@@ -15,16 +15,16 @@ from tracing.statistics.cos import statistic as cswr
 from tracing.statistics.jsd import statistic as jsd
 
 def hook(m, inp, op, feats, name):
-    feats[name].append(op.detach().cpu())
+    feats[name].append(inp[0].detach().cpu())
 
 def mlp_cshr_per_layer(base_model,ft_model,i,n=500,emb_size=16,mlp_dim=20):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
-    base_handle = base_model.model.layers[i].mlp.gate_proj.register_forward_hook(base_hook)
+    base_handle = base_model.model.layers[i].mlp.down_proj.register_forward_hook(base_hook)
 
     ft_hook = lambda *args : hook(*args,feats,"ft")
-    ft_handle = ft_model.model.layers[i].mlp.gate_proj.register_forward_hook(ft_hook)
+    ft_handle = ft_model.model.layers[i].mlp.down_proj.register_forward_hook(ft_hook)
     
     linear_combinations_gate = torch.rand(size=(n,1,mlp_dim), dtype=torch.float32)
     
