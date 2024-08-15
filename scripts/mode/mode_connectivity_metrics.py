@@ -1,8 +1,3 @@
-import torch
-import math
-import numpy as np
-import csv
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
@@ -148,23 +143,3 @@ def avg_loss_ahmed(results_path, num_points=5, normalize=True, alphas=[0.0, 0.3,
 
 def compute_p_value(counter, total):
     return (total - counter - 1) / total
-
-# vicuna_unpermuted_loss = [5.366623401641846, 5.986485004425049, 6.671814441680908, 6.927042484283447, 7.014814376831055, 7.035386562347412, 7.0459303855896, 7.057350158691406, 7.077110290527344, 7.108644008636475, 7.143476963043213]
-
-# Plotting without the unpermuted trace
-# plot_traces("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", 'loss', 
-#             '/nlp/scr/salzhu/permutation_mode_connectivity_plots/aggregate/',
-#             "llama2-7b", "vicuna-1.5-7b")
-
-# Plotting with the unpermuted trace
-# plot_traces("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", 'loss', 
-#             '/nlp/scr/salzhu/permutation_mode_connectivity_plots/aggregate/',
-#             "llama2-7b", "vicuna-1.5-7b", unpermuted_res=vicuna_unpermuted_loss)
-
-# How the unpermuted max loss compares to permuted max loss
-# print(max_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
-
-# How the unpermuted avg loss (auc) compares to permuted avg loss
-# print(avg_loss("/nlp/scr/salzhu/vicuna_reseed_permutation_tests.csv", vicuna_unpermuted_loss))
-
-# print("Done!")

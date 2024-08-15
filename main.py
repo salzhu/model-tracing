@@ -28,7 +28,7 @@ from tracing.statistics.csh_mm import statistic as csh_mm_stat
 from tracing.statistics.csh_mm import statistic_rand as csh_mm_rand_stat
 from tracing.statistics.mlp_sp import statistic as mlp_sp_stat
 from tracing.statistics.mlp_mm import statistic as mlp_mm_stat
-from scripts.perm.main import statistic as perm_mc_l2_stat
+from tracing.statistics.perm_mc_l2 import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
