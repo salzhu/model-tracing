@@ -21,12 +21,12 @@ from tracing.statistics.mc import statistic as mode_stat
 from tracing.statistics.emb import statistic as emb_stat
 from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
-from tracing.statistics.csw_spcor import statistic as csw_sp_stat
+from tracing.statistics.csw_sp import statistic as csw_sp_stat
 from tracing.statistics.csw_mm import statistic as csw_mm_stat
-from tracing.statistics.csh_spcor import statistic as csh_sp_stat
+from tracing.statistics.csh_sp import statistic as csh_sp_stat
 from tracing.statistics.csh_mm import statistic as csh_mm_stat
 from tracing.statistics.csh_mm import statistic_rand as csh_mm_rand_stat
-from tracing.statistics.mlp_spcor import statistic as mlp_sp_stat
+from tracing.statistics.mlp_sp import statistic as mlp_sp_stat
 from tracing.statistics.mlp_mm import statistic as mlp_mm_stat
 from scripts.perm.main import statistic as perm_mc_l2_stat
 
