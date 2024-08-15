@@ -113,10 +113,27 @@ def get_statistic_from_file(filename):
             stat = stat.replace(' ', '')
             stat = stat.replace('(', '')
             stat = stat.replace(':', '')
+            stat = stat.replace('tensor', '')
             stat = float(stat)
 
     return stat
 
+def get_layer_statistic_from_file(filename, layer):
+    file = open(filename, 'r')
+
+    lines = file.readlines()
+    stat = np.nan
+
+    for line in lines:
+        temp = str(layer) + " "
+        if line[:len(temp)] == temp:
+            stat = line[line.find("0."):]
+            if "e" in line:
+                stat = 0
+            # print(layer, stat)
+            stat = float(stat)
+
+    return stat
 
 def plot_statistic_scatter(results_path, dict_ft, plot_path):
 
@@ -136,7 +153,7 @@ def plot_statistic_scatter(results_path, dict_ft, plot_path):
 
     plt.figure(figsize=(8, 6))
 
-    plt.scatter(x, y, s=10)
+    plt.scatter(x, y, s=2)
             
     plt.xlabel("Fine tuned")
     plt.ylabel("Test statistic")
@@ -146,7 +163,7 @@ def plot_statistic_scatter(results_path, dict_ft, plot_path):
     plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
     plt.close()
 
-def plot_statistic_grid(results_path, dict_base, plot_path, decimals, log=False):
+def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log=False):
     models = list(dict_base.keys())
     print(models)
 
@@ -178,7 +195,7 @@ def plot_statistic_grid(results_path, dict_base, plot_path, decimals, log=False)
 
     cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     # plt.colorbar(im, cax=cbar)
-    cbar.ax.set_ylabel("test statistic", rotation=-90, va="bottom")
+    # cbar.ax.set_ylabel("test statistic", rotation=-90, va="bottom")
 
     # Show all ticks and label them with the respective list entries
     ax.set_xticks(np.arange(len(models)), labels=models)
@@ -194,75 +211,282 @@ def plot_statistic_grid(results_path, dict_base, plot_path, decimals, log=False)
             text = ax.text(j, i, data[i, j],
                         ha="center", va="center", color="w")
 
-    ax.set_title("Test statistic for model pairs")
+    ax.set_title(title)
     fig.tight_layout()
     plot_filename = f"{plot_path}.png"
 
     plt.savefig(plot_filename, dpi=500, bbox_inches="tight")
     plt.close()
 
-def plot_statistic_grid_bad(results_path, dict_ft, dict_base, plot_path, decimals):
-    # model 1 vs model 2 
-    # color the model names 
 
+def plot_statistic_scatter_layer(results_path, dict_ft, plot_path, layer):
+
+    x = []
+    y = []
+
+    dir_list = os.listdir(results_path)
+    for file in dir_list:
+        models = file[:file.find('.out')]
+        if("huggyllama" in models): continue
+        print(models)
+        ft = int(dict_ft[models])
+        stat = get_layer_statistic_from_file(results_path + '/' + file, layer)
+        if not np.isnan(stat):
+            x.append(ft)
+            y.append(get_layer_statistic_from_file(results_path + '/' + file, layer))
+
+    plt.figure(figsize=(8, 6))
+
+    plt.scatter(x, y, s=2)
+            
+    plt.xlabel("Fine tuned")
+    plt.ylabel("Test statistic")
+    # plt.title(f"{}")
+    plot_filename = f"{plot_path}.png"
+
+    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
+def plot_statistic_grid_layer(results_path, dict_base, title, plot_path, decimals, layer, log=False):
     models = list(dict_base.keys())
     print(models)
 
     data = np.full((len(models), len(models)), np.nan)
 
     for i in range(len(models)):
-        for j in range(i+1,len(models)):
+        for j in range(len(models)):
             model_a = models[i]
             model_b = models[j]
 
             job_id = model_a.replace("/","-") + "_AND_" + model_b.replace("/","-") + ".out"
-            stat = get_statistic_from_file(results_path + '/' + job_id)
+
+            if not os.path.exists(results_path + '/' + job_id): continue
+
+            stat = get_layer_statistic_from_file(results_path + '/' + job_id, layer)
+
+            if log: 
+                stat = np.log(stat)
+            
             data[i][j] = np.round(stat,decimals=decimals)
+            data[j][i] = data[i][j]
 
-    cell_colors = plt.cm.viridis(data)
+    fig, ax = plt.subplots()
+    fig.set_size_inches(20, 20)
+    im = ax.imshow(data)
 
-    model_labels = np.empty(len(models))
+    divider = make_axes_locatable(ax)
+    # cbar = divider.append_axes("right", size="5%", pad=0.05)
+
+    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    # plt.colorbar(im, cax=cbar)
+    # cbar.ax.set_ylabel("test statistic", rotation=-90, va="bottom")
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(models)), labels=models)
+    ax.set_yticks(np.arange(len(models)), labels=models)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
     for i in range(len(models)):
-        model_labels[i] = float(base[models[i]]) / 7
+        for j in range(len(models)):
+            text = ax.text(j, i, data[i, j],
+                        ha="center", va="center", color="w")
 
-    model_colors = plt.cm.Pastel1(model_labels)
-    
+    ax.set_title(title)
+    fig.tight_layout()
+    plot_filename = f"{plot_path}.png"
 
+    plt.savefig(plot_filename, dpi=500, bbox_inches="tight")
+    plt.close()
 
-    plt.figure(figsize=(6, 6))
+def plot_histogram(results_path, dict_ft, plot_path):
+    indp = []
+    not_indp = []
 
-    plt.axis('off')
-    plt.axis('tight')
+    dir_list = os.listdir(results_path)
+    for file in dir_list:
+        models = file[:file.find('.out')]
+        print(models)
+        ft = int(dict_ft[models])
+        stat = get_statistic_from_file(results_path + '/' + file)
+        if not np.isnan(stat):
+            if ft:
+                not_indp.append(stat)
+            else:
+                indp.append(stat)
 
-    # plt.table(cellText=data,
-    #                       cellColours=cell_colors,
-    #                       rowLabels=models,
-    #                       rowColours=model_colors,
-    #                       colLabels=models,
-    #                       colColours=model_colors,
-    #                       loc='center')
-    
-    plt.table(cellColours=cell_colors,
-              rowLabels=models,
-              rowColours=model_colors,
-              colLabels=models,
-              colColours=model_colors,
-              loc='center')
+    plt.figure(figsize=(8, 6))
 
+    plt.hist(indp, bins=20, range=(0,1), color="blue") 
+    plt.hist(not_indp, bins=20, range=(0,1), color="green") 
+
+    plt.xlabel("Test statistic value")
+    plt.ylabel("Count")
+    # plt.title(f"{}")
     plot_filename = f"{plot_path}.png"
 
     plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
     plt.close()
 
-    return
+
+def fisher(pvalues):
+    chi_squared = 0
+    num_layers = 0
+    for pvalue in pvalues:
+        if not np.isnan(pvalue):
+            chi_squared -= 2 * np.log(pvalue)
+            num_layers += 1
+
+    return chi2.sf(chi_squared, df=2*num_layers)
+
+def plot_statistic_scatter_all_layers(results_path, dict_ft, plot_path):
+
+    x = []
+    y = []
+    c = []
+
+    dir_list = os.listdir(results_path)
+
+    for layer in range(32):
+
+        for file in dir_list:
+            models = file[:file.find('.out')]
+            # if("huggyllama" in models): continue
+            print(models)
+            ft = int(dict_ft[models])
+            stat = get_layer_statistic_from_file(results_path + '/' + file, layer)
+            if not np.isnan(stat):
+                x.append(layer)
+                y.append(get_layer_statistic_from_file(results_path + '/' + file, layer))
+                if ft: c.append('r')
+                else: c.append('b')
+
+    for file in dir_list:
+        models = file[:file.find('.out')]
+        # if("huggyllama" in models): continue
+        ft = int(dict_ft[models])
+        stat = get_layer_statistic_from_file(results_path + '/' + file, layer)
+        if not np.isnan(stat):
+            x.append(layer)
+            y.append(get_layer_statistic_from_file(results_path + '/' + file, layer))
+            if ft: c.append('r')
+            else: c.append('b')
+    
+    plt.figure(figsize=(8, 6))
+
+    plt.scatter(x, y, s=1.5, c=c)
+            
+    plt.xlabel("Layer")
+    plt.ylabel("p-value")
+    # plt.title(f"{}")
+    plot_filename = f"{plot_path}.png"
+
+    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
+def plot_pvalue_log(results_path, dict_ft, plot_path):
+
+    pvalues = []
+
+    dir_list = os.listdir(results_path)
+
+    for layer in range(32):
+
+        for file in dir_list:
+            models = file[:file.find('.out')]
+            if("huggyllama" in models): continue
+            print(models)
+            ft = int(dict_ft[models])
+            if ft == True: continue
+            stat = get_layer_statistic_from_file(results_path + '/' + file, layer)
+            if not np.isnan(stat):
+                pvalues.append(stat)
+
+    # x = np.arange(-10, 0, step=0.1)
+    # x = np.power(10, x)
+    x = np.arange(0,1,step=0.001)
+    y = []
+    
+    for i in x:
+        counter = 0
+        for val in pvalues:
+            if val < i:
+                counter += 1
+        y.append(counter / len(pvalues))
+
+    plt.figure(figsize=(8, 6))
+
+    plt.plot(x, y, '.-')
+            
+    # plt.xlabel("Fine tuned")
+    # plt.ylabel("Test statistic")
+    # plt.title(f"{}")
+    # plt.xlim(-10,0)
+    # plt.ylim(-10,0)
+    plot_filename = f"{plot_path}.png"
+
+    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+    plt.close()
 
 if __name__ == "__main__":
-    # dict_ft = get_dict_ft("/nlp/u/salzhu/model-tracing/config/llama_flat.yaml")
+    dict_ft = get_dict_ft("/nlp/u/salzhu/model-tracing/config/llama_flat.yaml")
 
     # plot_statistic_scatter("/juice4/scr4/nlp/model-tracing/llama_models_runs/mc_base_wikitext/logs", 
     #                dict_ft, "test_statistic_plots/mc_base_wikitext")
 
-    plot_statistic_grid("/juice4/scr4/nlp/model-tracing/llama_models_runs/cos_acts_rand/logs", 
-                        base_ordered, "test_statistic_tables/cos_acts_rand", 3, log=False)
+    # plot_statistic_grid("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+    #                     base_ordered, "MLP up/gate matching p-value on permuted model pairs (random inputs for matching)", 
+    #                     "/nlp/u/salzhu/test_statistic_tables/mlp_match_rand_rot_perm_lap", 
+    #                     3, log=False)
+    
+    # plot_statistic_scatter("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", dict_ft, 
+    #                        "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap")
+
+    # plot_statistic_scatter_layer("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", dict_ft, 
+    #                        "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_layer31", 31)
+
+    # plot_statistic_grid_layer("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+    #                     base_ordered, "MLP up/gate matching p-value on permuted model pairs (random inputs for matching)", 
+    #                     "/nlp/u/salzhu/test_statistic_tables/mlp_match_rand_rot_perm_lap_layer31", 
+    #                     3, 31, log=False)
+
+    # plot_statistic_scatter_all_layers("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+    #                     dict_ft, 
+    #                     "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_all_layers")
+    
+    # plot_pvalue_log("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+    #                dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_pvalue_log")
+
+    plot_histogram("/juice4/scr4/nlp/model-tracing/mlp_match_med_max_layer0/logs", 
+                   dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_med_max_histogram")
+
+    # checkpoints = {
+    #     "100M": 1e8,
+    #     "1B": 1e9,
+    #     "10B": 1e10,
+    #     "18B": 1.8e10,
+    # }
+
+    # checkpoints = {
+    #     "100M": 1e8,
+    #     "1B": 1e9,
+    #     "4B": 4e9,
+    #     "8B": 8e9,
+    #     "16B": 1.6e10
+    # }
+
+    # checkpoints = {
+    #     "100M": 1e8,
+    #     "1B": 1e9,
+    #     "12B": 1.2e10,
+    #     "25B": 2.5e10
+    # }
+
+    # plot_statistic_olmo_scatter("/juice4/scr4/nlp/model-tracing/olmo_models_runs/final_checkpoint/csw_robust_cols/logs", checkpoints, 
+    #                             "final checkpoint vs. additional training seed 42", "CSW robust", 
+    #                             "/nlp/u/salzhu/olmo_plots/final_checkpoint/csw_robust_cols_seed42")
 
 

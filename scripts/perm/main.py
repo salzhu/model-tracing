@@ -85,7 +85,7 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
     base_metric = None
     ft_metric = None
 
-    start = timeit.default_timer()
+    # start = timeit.default_timer()
 
     # if normalize:
     #     base_metric = test_stat(base_model, base_model)
@@ -96,12 +96,12 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
     # if normalize:
     #     unperm_stat = normalize_mc_midpoint(unperm_stat, base_metric, ft_metric)
 
-    print(unperm_stat, timeit.default_timer()-start)
+    print(unperm_stat)
 
     perm_stats = []
 
     for i in range(num_perm): 
-        start = timeit.default_timer()
+        # start = timeit.default_timer()
 
         mlp_permutation = torch.randperm(MLP_SIZE)
         emb_permutation = torch.randperm(EMB_SIZE)
@@ -114,15 +114,15 @@ def main(base_model, ft_model, test_stat, num_perm, normalize=False):
         #     perm_stat = normalize_mc_midpoint(perm_stat, base_metric, ft_metric)
 
         perm_stats.append(perm_stat)
-        print(i, perm_stat, timeit.default_timer()-start)
+        print(i, perm_stat)
 
-    # print(perm_stats)
+    print(perm_stats)
     exact = p_value_exact(unperm_stat, perm_stats.copy())
     approx = p_value_approx(unperm_stat, perm_stats.copy())
 
     print(exact, approx)
 
-    return exact, approx
+    return exact, approx, unperm_stat, perm_stats
 
 if __name__ == "__main__":
 

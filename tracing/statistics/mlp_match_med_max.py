@@ -24,6 +24,15 @@ def hook_in(m, inp, op, feats, name):
 def hook_out(m, inp, op, feats, name):
     feats[name].append(op.detach().cpu())
 
+def statistic(base_model, ft_model, i, dataloader):
+    fix_layer_norm(base_model)
+    fix_layer_norm(ft_model)
+    perm = mlp_matching_full_model(base_model, ft_model, dataloader)
+
+    undo_mlp_permutation(ft_model, perm)
+
+    return mlp_matching_per_layer(base_model, ft_model, i)
+
 # sends random inputs directly (only) through mlp i
 # robust to rotation because uses linear combination of mlp gates to create inputs
 # prints the median of max for cosine similarity matching; and returns matched permutation 
@@ -69,9 +78,9 @@ def mlp_matching_per_layer(base_model,ft_model,i,n=5000,emb_size=4096,mlp_dim=11
     base_handle.remove()
     ft_handle.remove()
     perm = torch.argmax(mat,axis=-1)
-    print(torch.median(torch.max(mat,axis=-1).values).item())
+    # print(torch.median(torch.max(mat,axis=-1).values).item())
     
-    return perm
+    return torch.median(torch.max(mat,axis=-1).values).item()
 
 # sends input sequences provided via dataloader through full model, uses activations from mlp i
 # robust to rotation because of unrotated input
@@ -87,9 +96,7 @@ def mlp_matching_full_model(base_model, ft_model, dataloader, n=5000, i=0, emb_s
     ft_handle = ft_model.model.layers[i].mlp.gate_proj.register_forward_hook(ft_hook)
 
     evaluate(base_model, dataloader)
-    print("2")
     evaluate(ft_model, dataloader)
-    print("3")
     
     base_mat = torch.vstack(feats['base'])
     ft_mat = torch.vstack(feats['ft'])
@@ -100,11 +107,10 @@ def mlp_matching_full_model(base_model, ft_model, dataloader, n=5000, i=0, emb_s
     base_handle.remove()
     ft_handle.remove()
 
-    # perm = match_wmats(base_mat,ft_mat)
-    mat = cossim(base_mat,ft_mat)
-    print(mat)
-    print(torch.median(torch.max(mat,axis=-1).values).item())
-    perm = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
+    perm = match_wmats(base_mat,ft_mat)
+    # print(mat)
+    # print(torch.median(torch.max(mat,axis=-1).values).item())
+    # perm = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
     
     return perm
 
@@ -170,148 +176,57 @@ def undo_mlp_permutation(model, mlp_perm, num_layers=32):
 
 def main():
 
-    model_name = "meta-llama/Llama-2-7b-hf" # "EleutherAI/llemma_7b" # "meta-llama/Llama-2-7b-hf"
-    rot_model_name = 'LLM360/Amber' # "meta-llama/Llama-2-7b-hf" # 'lmsys/vicuna-7b-v1.1' # "EleutherAI/llemma_7b" # "codellama/CodeLlama-7b-hf" # 'microsoft/Orca-2-7b' # "codellama/CodeLlama-7b-hf" # 'lmsys/vicuna-7b-v1.1' # "EleutherAI/llemma_7b" # 'LLM360/Amber' # 'lmsys/vicuna-7b-v1.1' # 'LLM360/Amber' # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.1' # "lmsys/vicuna-7b-v1.1"
+    model_name =  "meta-llama/Llama-2-7b-hf" # "EleutherAI/llemma_7b" 'microsoft/Orca-2-7b'
+    rot_model_name = 'openlm-research/open_llama_7b' # "EleutherAI/llemma_7b" # 'openlm-research/open_llama_7b' #'LLM360/Amber'# "EleutherAI/llemma_7b" # 'lmsys/vicuna-7b-v1.1' # "EleutherAI/llemma_7b"  # 'lmsys/vicuna-7b-v1.5' # "codellama/CodeLlama-7b-hf" # 'microsoft/Orca-2-7b' 'LLM360/Amber' # 'openlm-research/open_llama_7b' 
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16) #bfloat16
     model_rotated = AutoModelForCausalLM.from_pretrained(rot_model_name, torch_dtype=torch.bfloat16)
 
-    fix_layer_norm(model)
-    fix_layer_norm(model_rotated)
-
     rotate_model(model_rotated)
+    permute_model(model_rotated, model_rotated, torch.randperm(11008), torch.randperm(4096))
 
-    mlp_match_1 = mlp_matching_per_layer(model, model_rotated, 31)
-    print(mlp_match_1)
+    base_tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer) # prepare_random_sample_dataset(5000, 512, vocab_size)
+    dataloader = prepare_hf_dataloader(dataset,1)
 
-    mlp_match_2 = mlp_matching_per_layer(model, model_rotated, 31)
-    print(mlp_match_2)
+    print(statistic(model, model_rotated, 0, dataloader))
 
-    # p value of how similar the two matchings are using spearman corr
-    cor, pvalue = scipy.stats.pearsonr(mlp_perm_1.tolist(), mlp_perm_2.tolist())
-    print(pvalue)
+    # print(model_name)
+    # print(rot_model_name)
 
-    # how many indices of the matchings overlap
-    mlp_perm_1 = mlp_perm_1.tolist()
-    mlp_perm_2 = mlp_perm_2.tolist()
-    print(sum(mlp_perm_1[i] == mlp_perm_2[i] for i in range(len(mlp_perm_1))))
-
-
-
-
-
-    
-
-    # base_tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-
-    # dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",256,base_tokenizer) # prepare_random_sample_dataset(5000, 512, vocab_size)
-    # length = len(dataset)
-    # dataloader1 = prepare_hf_dataloader(Subset(dataset,torch.arange(length)[:int(length/2)]),1)
-    # dataloader2 = prepare_hf_dataloader(Subset(dataset,torch.arange(length)[int(length/2):]),1)
-
-    # dataset1 = prepare_random_sample_dataset(5000, 512)
-    # dataset2 = prepare_random_sample_dataset(5000, 512)
-    # dataloader1 = prepare_hf_dataloader(dataset1, 1)
-    # dataloader2 = prepare_hf_dataloader(dataset2, 1)
-    # print(dataloader1)
-    # print(dataloader2)
-    # print("1")
-
-    
-    # dataloader2 = prepare_hf_dataloader(dataset[int(length/2):],1)
-    # length = len(dataset1)
-    # print(length/2)
-    # dataset1['input_ids'] = dataset1['input_ids'][:int(length/2)]
-    # dataset1['attention_mask'] = dataset1['attention_mask'][:int(length/2)]
-    # dataset1['labels'] = dataset1['labels'][:int(length/2)]
-    # dataloader1 = prepare_hf_dataloader(dataset1,1)
-    # print(dataloader)
-    # print(dataset[:6])
-    # print(len(dataset1))
-    # print(dataset1)
-
-    # dataset2 = prepare_hf_dataset("dlwh/wikitext_103_detokenized",256,base_tokenizer) # prepare_random_sample_dataset(5000, 512, vocab_size)
-    # length = len(dataset2)
-    # dataset2['input_ids'] = dataset2['input_ids'][length/2:]
-    # dataset2['attention_mask'] = dataset2['attention_mask'][length/2:]
-    # dataset2['labels'] = dataset2['labels'][length/2:]
-    # dataloader2 = prepare_hf_dataloader(dataset2,1)
-
-
+    # fix_layer_norm(model)
+    # fix_layer_norm(model_rotated)
 
     # rotate_model(model_rotated)
-    # mlp_perm = torch.arange(11008)
-    # permute_model(model_rotated, model_rotated, mlp_perm, torch.randperm(4096))
 
+    # print("Unpermuted statistic")
 
-    # mlp_perm_1 = solve_mlp_permutation(model, model_rotated, dataloader1)
-    
+    # mlp_match_unperm = mlp_matching_per_layer(model, model_rotated, 0)
+    # print(mlp_match_unperm)
 
-    # undo_mlp_permutation(model, mlp_perm)
+    # orig_perm = torch.randperm(11008)
+    # print("Orig perm " +  str(orig_perm))
 
-    
+    # rotate_model(model_rotated)
+    # permute_model(model_rotated, model_rotated, orig_perm, torch.randperm(4096))
 
-    # # print(evaluate(model, dataloader))
+    # print("Random permuted statistic")
 
-    # model.to('cuda')
+    # mlp_match_1 = mlp_matching_per_layer(model, model_rotated, 0)
+    # print(mlp_match_1)
 
-    # weights = model.state_dict()
+    # # undo mlp permutation 
+    # base_tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+    # dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer) # prepare_random_sample_dataset(5000, 512, vocab_size)
+    # dataloader = prepare_hf_dataloader(dataset,1)
+    # perm = mlp_matching_full_model(model, model_rotated, dataloader)
+    # print(perm)
 
-    # for i in range(32):
-    #     weights[f'model.layers.{i}.mlp.gate_proj.weight'] = weights[f'model.layers.{i}.mlp.gate_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])
-    #     weights[f'model.layers.{i}.mlp.up_proj.weight'] = weights[f'model.layers.{i}.mlp.up_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])
-    #     weights[f'model.layers.{i}.post_attention_layernorm.weight'] = torch.ones(4096)
+    # undo_mlp_permutation(model_rotated, perm)
 
-    # model.load_state_dict(weights)
-    # model.to('cpu')
+    # print("Matched permutation statistic")
 
-    # # model.to('cpu')
-    
-    # # print(evaluate(model, dataloader))
-
-    # model_rotated.to('cuda')
-
-    # weights_rotated = model_rotated.state_dict()
-
-    # for i in range(32):
-    #     weights_rotated[f'model.layers.{i}.mlp.gate_proj.weight'] = weights_rotated[f'model.layers.{i}.mlp.gate_proj.weight']@torch.diag(weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight'])
-    #     weights_rotated[f'model.layers.{i}.mlp.up_proj.weight'] = weights_rotated[f'model.layers.{i}.mlp.up_proj.weight']@torch.diag(weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight'])
-    #     weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight'] = torch.ones(4096)
-
-    # model_rotated.load_state_dict(weights_rotated)
-    # model_rotated.to('cpu')
-
-    # config = LlamaConfig()
-
-    # model = LlamaForCausalLM(config)
-    # model_rotated = LlamaForCausalLM(config)
-
-    # print(evaluate(model, dataloader))
-
-    
-
-    # cshr(model, model_rotated, num_layers=num_layers, emb_size=hidden_dim)
-    # act_robust(model, model_rotated, dataloader, num_layers=num_layers)
-    # print("Random model pair")
-    # print("jsd: " + str(jsd(model, model_rotated, dataloader)))
-    # print("csw spearman p-value: " + str(csw(model, model_rotated)[0]))
-    # print("csw robust: " + str(cswr(model, model_rotated, num_layers)[0]))
-    # print("l2: " + str(calculate_l2_distance(model, model_rotated)))
-    # print("mlp cshr bad: " + str(mlp_cshr_bad(model, model_rotated, 0)))
-    # print("mlp cshr with wikitext inputs through full model: " + str(mlp_cshr_full_model(model, model_rotated, dataloader, num_layers=32)))
-    # print("mlp cshr with random canonical basis: " + str(mlp_cshr_per_layer(model, model_rotated, 0)))
-    # print()
-
-    # x = torch.randint(low=0, high=vocab_size, size=(batch_size,seq_length))
-
-    # print("Rotated model pair")
-    # print("jsd: " + str(jsd(model, model_rotated, dataloader)))
-    # print("csw spearman p-value: " + str(csw(model, model_rotated)[0]))
-    # print("csw robust: " + str(cswr(model, model_rotated, 32)[0]))
-    # print("l2: " + str(calculate_l2_distance(model, model_rotated)))
-    # print("mlp cshr bad: " + str(mlp_cshr_bad(model, model_rotated, 0)))
-    # print("mlp cshr with wikitext inputs through full model: " + str(mlp_cshr_full_model(model, model_rotated, dataloader, num_layers=32)))
-    # print(mlp_cshr_per_layer(model, model_rotated, 0))
-
+    # mlp_match_solved = mlp_matching_per_layer(model, model_rotated, 0)
+    # print(mlp_match_solved)
 
 if __name__ == "__main__":
     main()

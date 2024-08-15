@@ -11,8 +11,13 @@ def statistic(base_model, ft_model):
 
 def cos_cor_layer_2d(base_model,ft_model,layer_name):
 
-    base_mat = base_model.state_dict()[layer_name]
-    ft_mat = ft_model.state_dict()[layer_name]
+    base_mat = base_model.state_dict()[layer_name].T
+    ft_mat = ft_model.state_dict()[layer_name].T
+
+    # if 'embed' in layer_name or 'lm_head' in layer_name:
+    #     base_mat = base_mat[:50280]
+    #     ft_mat = ft_mat[:50280]
+
     matched = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
 
     orig = torch.arange(len(matched))
@@ -33,6 +38,7 @@ def cos_cor_fisher(model1,model2):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
         elif param1.dim() == 1: continue
+        elif ("embed_tokens" not in name1) and ("mlp.gate_proj" not in name1): continue
         elif "attn" in name1: continue
         elif param1.shape != param2.shape:
             if name1 == "model.embed_tokens.weight" or name1 == "lm_head.weight":
@@ -53,8 +59,8 @@ def cos_cor_fisher(model1,model2):
         # print(name1, pvalue)
 
     p_value = chi2.sf(chi_squared, df=2*num_layers)
-    print(p_value)
-    print(p_values)
+    # print(p_value)
+    # print(p_values)
     return p_value, p_values
         
 if __name__ == "__main__":
@@ -62,7 +68,10 @@ if __name__ == "__main__":
     base_model_name = 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5' # "meta-llama/Llama-2-7b-hf"
     ft_model_name = 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1" # "codellama/CodeLlama-7b-hf"
 
-    base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
-    ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
+    # base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
+    # ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
+
+    base_model = AutoModelForCausalLM.from_pretrained("/juice4/scr4/nlp/model-tracing/olmo_checkpoint/indp/seed_0_100M/")
+    ft_model = AutoModelForCausalLM.from_pretrained("/juice4/scr4/nlp/model-tracing/olmo_checkpoint/indp/seed_42_100M/")
 
     statistic(base_model, ft_model)

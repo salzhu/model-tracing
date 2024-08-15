@@ -11,7 +11,7 @@ import timeit
 import subprocess
 import os
 
-from tracing.utils.llama.model import permute_model
+from tracing.utils.llama.model import permute_model, rotate_model
 from tracing.utils.olmo.model import permute_model as permute_model_olmo
 from tracing.utils.llama.matching import align_model
 from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prepare_hf_dataloader,evaluate, load_dolma_programming_datasets, load_m2d2_datasets, load_generated_datasets, prepare_random_sample_dataset
@@ -26,6 +26,8 @@ from tracing.statistics.cos_weights import statistic as cos_weight_stat
 from tracing.statistics.act import statistic as cos_act_stat
 from tracing.statistics.csh_robust import statistic as csh_robust_stat
 from tracing.statistics.csh_robust import statistic_rand as csh_robust_rand_stat
+from tracing.statistics.mlp_gate_up_matching import statistic as mlp_match_stat
+from tracing.statistics.mlp_match_med_max import statistic as mlp_match_med_max_stat
 from scripts.perm.main import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
@@ -34,6 +36,7 @@ parser.add_argument('--base_model_id',default="meta-llama/Llama-2-7b-hf",type=st
 parser.add_argument('--ft_model_id',default="lmsys/vicuna-7b-v1.1",type=str)
 
 parser.add_argument('--permute',action='store_true')
+parser.add_argument('--rotate',action='store_true')
 parser.add_argument('--align',action='store_true')
 
 parser.add_argument('--dataset',default="wikitext",type=str)
@@ -108,6 +111,10 @@ if args.permute is True:
         permute_model(ft_model,ft_model,mlp_permutation,emb_permutation)
     print("ft model permuted")
 
+if args.rotate is True:
+    rotate_model(ft_model)
+    print("ft model rotated")
+
 if '70b' in args.base_model_id.lower() and '70b' in args.ft_model_id.lower():
     # skip tmp_model
     tmp_model = None
@@ -150,7 +157,7 @@ elif args.dataset == "generated":
     dataset = load_generated_datasets(args.base_model_id, args.ft_model_id, args.block_size, base_tokenizer, columns_ignored)
     dataloader = prepare_hf_dataloader(dataset, args.batch_size)
 elif args.dataset == "random":
-    dataset = prepare_random_sample_dataset(1, args.block_size)
+    dataset = prepare_random_sample_dataset(20, args.block_size)
     dataloader = prepare_hf_dataloader(dataset, args.batch_size)
 
 else:
@@ -185,6 +192,11 @@ if args.stat == "perm_mc_l2":
     mc = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
     l2 = lambda base_model,ft_model : l2_stat(base_model,ft_model)
     test_stat = lambda base_model,ft_model : perm_mc_l2_stat(base_model,ft_model,mc,l2,args.num_perm)
+
+if args.stat == "mlp_match_robust":
+    test_stat = lambda base_model,ft_model : mlp_match_stat(base_model,ft_model,dataloader)
+if args.stat == "mlp_match_med_max":
+    test_stat = lambda base_model,ft_model : mlp_match_med_max_stat(base_model,ft_model,0,dataloader)
 
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))

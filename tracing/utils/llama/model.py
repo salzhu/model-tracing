@@ -1,4 +1,6 @@
 import copy
+import torch
+from scipy.stats import ortho_group
 
 def permute_model(model,tmp_model,mlp_permutation,emb_permutation,n_blocks=32):
   permute_embedding_layer(model,tmp_model,emb_permutation)
@@ -112,3 +114,34 @@ def get_mlp_weights(model,i):
 
 def get_emb_weights(model):
   return model.state_dict()['model.embed_tokens.weight']
+
+def rotate_model(model, num_layers=32, hidden_dim=4096):
+
+    model.to('cuda')
+
+    rotation = ortho_group.rvs(dim=hidden_dim)
+    rotation = torch.tensor(rotation, dtype=torch.bfloat16).to('cuda')
+
+    weights = model.state_dict()
+    weights_rotated = model.state_dict()
+
+    weights_rotated['model.embed_tokens.weight'] = weights['model.embed_tokens.weight']@rotation
+
+    for i in range(num_layers):
+
+        weights_rotated[f'model.layers.{i}.input_layernorm.weight'] = torch.ones(hidden_dim)
+        weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight'] = torch.ones(hidden_dim)
+
+        weights_rotated[f'model.layers.{i}.self_attn.q_proj.weight'] = weights[f'model.layers.{i}.self_attn.q_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation
+        weights_rotated[f'model.layers.{i}.self_attn.k_proj.weight'] = weights[f'model.layers.{i}.self_attn.k_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation
+        weights_rotated[f'model.layers.{i}.self_attn.v_proj.weight'] = weights[f'model.layers.{i}.self_attn.v_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation
+        weights_rotated[f'model.layers.{i}.self_attn.o_proj.weight'] = rotation.T@weights[f'model.layers.{i}.self_attn.o_proj.weight'] 
+
+        weights_rotated[f'model.layers.{i}.mlp.gate_proj.weight'] = weights[f'model.layers.{i}.mlp.gate_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])@rotation
+        weights_rotated[f'model.layers.{i}.mlp.up_proj.weight'] = weights[f'model.layers.{i}.mlp.up_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])@rotation
+        weights_rotated[f'model.layers.{i}.mlp.down_proj.weight'] = rotation.T@weights[f'model.layers.{i}.mlp.down_proj.weight']
+
+    weights_rotated['model.norm.weight'] = torch.ones(hidden_dim)
+    weights_rotated['lm_head.weight'] = weights['lm_head.weight']@torch.diag(weights['model.norm.weight'])@rotation
+
+    model.load_state_dict(weights_rotated)

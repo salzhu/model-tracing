@@ -46,14 +46,75 @@ def compute_jsd(base_model, ft_model, dataloader, device="cuda"):
             softmax_ft = softmax_ft[:, :32000]
 
             m = 0.5 * (softmax_base + softmax_ft)
+            # print(m)
+            # print("----")
+            # print(softmax_base)
+            # print("-------")
+            # for x in m:
+            #     if(torch.sum(x) == 0): print(x)
+            # print("--")
+            # for x in m.log().flatten():
+            #     if(x != x): print(x)
+            # print(m.log())
+            # print("-------------")
+            # print(torch.log(softmax_base))
+            # print("asdf")
+            # for x in torch.log(softmax_base).flatten():
+            #     if(x != x): print(x)
+            # print("****")
+            # y = torch.log(softmax_base) - m.log()
+            # print(y)
+            # print("----")
+            # counter = 0
+            # for i in range(len(y)):
+            #     for j in range(len(y[i])):
+            #         if(y[i][j] != y[i][j]):
+            #             y[i][j] = 0
+            #             counter += 1
+            # print(counter)
+            # print("----")
+            # z = softmax_base * y
+            # counter = 0
+            # sum = 0
+            # for i in range(len(z)):
+            #     for j in range(len(z[i])):
+            #         if(z[i][j] == z[i][j]):
+            #             sum += z[i][j]
+            #             counter += 1
+            # print(sum, counter)
+            # for i in range(len(z)):
+            #     for j in range(len(z[i])):
+            #         if(z[i][j] != z[i][j]):
+            #             z[i][j] = sum / counter
+
+            # z = torch.flatten(z)
+            # print(z)
+            # print("****")
+            # sum = 0
+            # counter = 0
+            # for x in z:
+            #     if x == x:
+            #         sum += x
+            #         counter += 1
+            # cleanz = [x for x in z if str(x) != 'nan']
+            # print(torch.mean(cleanz))
+            # print(sum, counter)
+            # print(sum / counter)
+            # print("blah")
+            # print("-------------")
+            # print(F.kl_div(m.log(), softmax_base))
+            # print(F.kl_div(m.log(), softmax_ft))
             jsd = 0.5 * (F.kl_div(m.log(), softmax_base) +
                          F.kl_div(m.log(), softmax_ft))
+
+            # print(jsd)
 
             jsds.append(jsd.item())
 
     base_model.to("cpu")
     ft_model.to("cpu")
-    print(sum(jsds))
+    # print(jsds)
+    # print(sum(jsds))
     return sum(jsds)
 
 def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
@@ -109,14 +170,17 @@ def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
 
 if __name__ == "__main__":
 
-    base_model_name = "meta-llama/Llama-2-7b-hf" # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5' 
-    ft_model_name = "codellama/CodeLlama-7b-hf" # 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1"
+    base_model_name = "LLM360/Amber" # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5' 
+    ft_model_name = "LLM360/AmberChat" # 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1"
 
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=False)
 
-    dataset = load_generated_datasets(base_model_name, ft_model_name, 512, base_tokenizer, ["text"])
-    dataloader = prepare_hf_dataloader(dataset, 1)
+    # dataset = load_generated_datasets(base_model_name, ft_model_name, 512, base_tokenizer, ["text"])
+    # dataloader = prepare_hf_dataloader(dataset, 1)
+
+    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer)
+    dataloader = prepare_hf_dataloader(dataset,1)
 
     print(statistic(base_model, ft_model, dataloader))
