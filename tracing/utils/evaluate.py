@@ -141,22 +141,6 @@ def evaluate(model, dataloader, device: str = "cuda"):
     model.to("cpu")
     return losses
 
-def evaluate_csh_test(model, dataloader, device: str = "cuda"):
-    model.to(device)
-    with torch.no_grad():
-        for batch in dataloader:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
-
-            outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-            )
-
-    model.to("cpu")
-    return
-
 def prepare_aya_dataset(subset: str, language: str, block_size: int, tokenizer: AutoTokenizer):
     """
     Prepare the Aya dataset for a specific subset and language.
