@@ -18,16 +18,16 @@ from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prep
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
-from tracing.statistics.cos import statistic as cos_stat
 from tracing.statistics.emb import statistic as emb_stat
 from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
-from tracing.statistics.cos_weights import statistic as cos_weight_stat
-from tracing.statistics.act import statistic as cos_act_stat
-from tracing.statistics.csh_robust import statistic as csh_robust_stat
-from tracing.statistics.csh_robust import statistic_rand as csh_robust_rand_stat
-from tracing.statistics.mlp_gate_up_matching import statistic as mlp_match_stat
-from tracing.statistics.mlp_match_med_max import statistic as mlp_match_med_max_stat
+from tracing.statistics.csw_spcor import statistic as csw_sp_stat
+from tracing.statistics.csw_mm import statistic as csw_mm_stat
+from tracing.statistics.csh_spcor import statistic as csh_sp_stat
+from tracing.statistics.csh_mm import statistic as csh_mm_stat
+from tracing.statistics.csh_mm import statistic_rand as csh_mm_rand_stat
+from tracing.statistics.mlp_spcor import statistic as mlp_sp_stat
+from tracing.statistics.mlp_mm import statistic as mlp_mm_stat
 from scripts.perm.main import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
@@ -168,21 +168,19 @@ print("dataset loaded")
 if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb, args.alpha)
     results['alpha'] = args.alpha
-if args.stat == "csw_spearman":
-    test_stat = lambda base_model,ft_model : cos_weight_stat(base_model,ft_model)
-if args.stat == "csh_spearman":
-    test_stat = lambda base_model,ft_model : cos_act_stat(base_model,ft_model,dataloader)
+if args.stat == "csw_sp":
+    test_stat = lambda base_model,ft_model : csw_sp_stat(base_model,ft_model)
+if args.stat == "csh_sp":
+    test_stat = lambda base_model,ft_model : csh_sp_stat(base_model,ft_model,dataloader)
     
 if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
-if args.stat == "csw_robust":
-    test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model,N_BLOCKS)
+if args.stat == "csw_mm":
+    test_stat = lambda base_model,ft_model : csw_mm_stat(base_model,ft_model,N_BLOCKS)
 if args.stat == "csh_robust":
-    test_stat = lambda base_model,ft_model : csh_robust_stat(base_model,ft_model,dataloader)
+    test_stat = lambda base_model,ft_model : csh_mm_stat(base_model,ft_model,dataloader)
 if args.stat == "csh_robust_mlp_rand":
-    test_stat = lambda base_model,ft_model : csh_robust_rand_stat(base_model,ft_model)
-if args.stat == "cos":
-    test_stat = lambda base_model,ft_model : cos_stat(base_model,ft_model, 80)
+    test_stat = lambda base_model,ft_model : csh_mm_rand_stat(base_model,ft_model)
 if args.stat == "jsd":
     test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)
 if args.stat == "emb":
@@ -193,10 +191,10 @@ if args.stat == "perm_mc_l2":
     l2 = lambda base_model,ft_model : l2_stat(base_model,ft_model)
     test_stat = lambda base_model,ft_model : perm_mc_l2_stat(base_model,ft_model,mc,l2,args.num_perm)
 
-if args.stat == "mlp_match_robust":
-    test_stat = lambda base_model,ft_model : mlp_match_stat(base_model,ft_model,dataloader)
-if args.stat == "mlp_match_med_max":
-    test_stat = lambda base_model,ft_model : mlp_match_med_max_stat(base_model,ft_model,0,dataloader)
+if args.stat == "mlp_sp":
+    test_stat = lambda base_model,ft_model : mlp_sp_stat(base_model,ft_model,dataloader)
+if args.stat == "mlp_mm":
+    test_stat = lambda base_model,ft_model : mlp_mm_stat(base_model,ft_model,0,dataloader)
 
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))
