@@ -13,7 +13,7 @@ def statistic(base_model,ft_model,dataloader):
 def hook(m, inp, op, feats, name):
     feats[name].append(op.detach().cpu())
 
-def csh_sp_dataloader_layer(base_model,ft_model,dataloader,i):
+def csh_sp_dataloader_block(base_model,ft_model,dataloader,i):
 
     feats = defaultdict(list)
 
@@ -35,7 +35,7 @@ def csh_sp_dataloader_layer(base_model,ft_model,dataloader,i):
     cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
     return pvalue
 
-def csh_sp_dataloader(base_model,ft_model,dataloader,num_layers=32):
+def csh_sp_dataloader(base_model,ft_model,dataloader,n_blocks=32):
 
     chi_squared = 0
     feats = defaultdict(list)
@@ -43,7 +43,7 @@ def csh_sp_dataloader(base_model,ft_model,dataloader,num_layers=32):
     base_hooks = {}
     ft_hooks = {}
 
-    for i in range(num_layers):
+    for i in range(n_blocks):
 
         layer = str(i)
 
@@ -57,8 +57,9 @@ def csh_sp_dataloader(base_model,ft_model,dataloader,num_layers=32):
     evaluate(ft_model,dataloader)
 
     p_values = []
+    count = 0
 
-    for i in range(num_layers):
+    for i in range(n_blocks):
 
         base_mat = torch.vstack(feats[f'base_{i}']).view(-1,base_mat.shape[-1]).T
         ft_mat = torch.vstack(feats[f'ft_{i}']).view(-1,ft_mat.shape[-1]).T
@@ -70,9 +71,9 @@ def csh_sp_dataloader(base_model,ft_model,dataloader,num_layers=32):
 
         if not np.isnan(temp):
             chi_squared -= 2 * np.log(temp)
-            num_layers += 1
+            count += 1
         p_values.append(temp)
 
-    p_value = chi2.sf(chi_squared, df=2*num_layers)
+    p_value = chi2.sf(chi_squared, df=2*count)
 
     return p_value, p_values

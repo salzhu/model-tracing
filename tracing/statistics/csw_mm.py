@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM
 
 from tracing.utils.utils import cossim
 
-def statistic(base_model,ft_model,n_blocks):
+def statistic(base_model,ft_model,n_blocks=32):
     sum = 0
     all = []
     for i in range(n_blocks):

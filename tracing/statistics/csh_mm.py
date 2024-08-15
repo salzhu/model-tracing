@@ -13,7 +13,7 @@ def statistic_rand(base_model,ft_model):
 def hook(m, inp, op, feats, name):
     feats[name].append(inp[0].detach().cpu())
 
-def csh_mm_dataloader_layer(base_model,ft_model,dataloader,i):
+def csh_mm_dataloader_block(base_model,ft_model,dataloader,i):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
@@ -30,14 +30,14 @@ def csh_mm_dataloader_layer(base_model,ft_model,dataloader,i):
     
     return torch.median(torch.max(cossim(base_mat,ft_mat),axis=-1).values).item()
 
-def csh_mm_dataloader(base_model,ft_model,dataloader,num_layers=32):
+def csh_mm_dataloader(base_model,ft_model,dataloader,n_blocks=32):
 
     feats = defaultdict(list)
 
     base_hooks = {}
     ft_hooks = {}
 
-    for i in range(num_layers):
+    for i in range(n_blocks):
 
         layer = str(i)
 
@@ -52,7 +52,7 @@ def csh_mm_dataloader(base_model,ft_model,dataloader,num_layers=32):
 
     stats = []
 
-    for i in range(num_layers):
+    for i in range(n_blocks):
 
         base_mat = torch.vstack(feats[f'base_{i}']).view(-1,base_mat.shape[-1]).T
         ft_mat = torch.vstack(feats[f'ft_{i}']).view(-1,ft_mat.shape[-1]).T
@@ -66,10 +66,10 @@ def csh_mm_dataloader(base_model,ft_model,dataloader,num_layers=32):
 
     return sum(cleanStats) / len(cleanStats), stats
 
-def csh_mm_rand(base_model,ft_model,num_layers=32,n=5000,emb_size=4096):
+def csh_mm_rand(base_model,ft_model,n_blocks=32,n=5000,emb_size=4096):
     meds = []
-    for i in range(num_layers):
-        med = csh_mm_rand_layer(base_model, ft_model, i, n, emb_size)
+    for i in range(n_blocks):
+        med = csh_mm_rand_block(base_model, ft_model, i, n, emb_size)
         meds.append(med)
         print(i, med)
 
@@ -77,7 +77,7 @@ def csh_mm_rand(base_model,ft_model,num_layers=32,n=5000,emb_size=4096):
 
     return sum(cleanMeds) / len(cleanMeds), meds
 
-def csh_mm_rand_layer(base_model,ft_model,i,n=5000,emb_size=4096):
+def csh_mm_rand_block(base_model,ft_model,i,n=5000,emb_size=4096):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
@@ -107,7 +107,7 @@ def csh_mm_rand_layer(base_model,ft_model,i,n=5000,emb_size=4096):
     
     return torch.median(torch.max(cossim(base_mat,ft_mat),axis=-1).values).item()
 
-def csh_mm_rand_cbasis_layer(base_model,ft_model,i,n=5000,mlp_size=11008):
+def csh_mm_rand_cbasis_block(base_model,ft_model,i,n=5000,mlp_size=11008):
     feats = defaultdict(list)
 
     base_hook = lambda *args : hook(*args,feats,"base")
@@ -138,10 +138,10 @@ def csh_mm_rand_cbasis_layer(base_model,ft_model,i,n=5000,mlp_size=11008):
     
     return torch.median(torch.max(cossim(base_mat,ft_mat),axis=-1).values).item()
 
-def csh_mm_rand_cbasis(base_model,ft_model,num_layers=32,n=5000,emb_size=4096):
+def csh_mm_rand_cbasis(base_model,ft_model,n_blocks=32,n=5000,emb_size=4096):
     meds = []
-    for i in range(num_layers):
-        med = csh_mm_rand_cbasis_layer(base_model, ft_model, i, n, emb_size)
+    for i in range(n_blocks):
+        med = csh_mm_rand_cbasis_block(base_model, ft_model, i, n, emb_size)
         meds.append(med)
         print(i, med)
 
