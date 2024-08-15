@@ -24,17 +24,13 @@ dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer)
 dataloader = prepare_hf_dataloader(dataset,1)
 
 evaluate_model = evaluate(model, dataloader)
-print(evaluate_model)
-
 evaluate_rotated = evaluate(model_rotated, dataloader)
-print(evaluate_rotated)
 
 print("outputs are aligned: ")
 print([abs(evaluate_model[i] - evaluate_rotated[i]) <= 0.01 for i in range(len(evaluate_model))])
 
 weights = model.state_dict()
 weights_rotated = model_rotated.state_dict()
-
 
 model.to('cuda')
 print("invariant 1")
