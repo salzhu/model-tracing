@@ -145,3 +145,26 @@ def rotate_model(model, num_layers=32, hidden_dim=4096):
     weights_rotated['lm_head.weight'] = weights['lm_head.weight']@torch.diag(weights['model.norm.weight'])@rotation
 
     model.load_state_dict(weights_rotated)
+
+# makes all post attention layer norms have value = 1 by multiplying mlp gate_proj and up_projs
+def fix_layer_norm(model, n_blocks=32, hidden_dim=4096):
+    model.to('cuda')
+
+    weights = model.state_dict()
+
+    for i in range(n_blocks):
+        weights[f'model.layers.{i}.mlp.gate_proj.weight'] = weights[f'model.layers.{i}.mlp.gate_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])
+        weights[f'model.layers.{i}.mlp.up_proj.weight'] = weights[f'model.layers.{i}.mlp.up_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])
+        weights[f'model.layers.{i}.post_attention_layernorm.weight'] = torch.ones(hidden_dim)
+
+    model.load_state_dict(weights)
+
+def scale_model_mlp(model, n_blocks=32):
+    model.to('cuda')
+    weights = model.state_dict()
+    for i in range(n_blocks):
+        a = torch.randn(1).to('cuda')
+        weights[f'model.layers.{i}.mlp.up_proj.weight'] = a * weights[f'model.layers.{i}.mlp.up_proj.weight']
+        weights[f'model.layers.{i}.mlp.down_proj.weight'] = 1/a * weights[f'model.layers.{i}.mlp.down_proj.weight']
+
+    model.load_state_dict(weights)
