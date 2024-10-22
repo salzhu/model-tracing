@@ -1,0 +1,24 @@
+---
+   - Qwen/Qwen2.5-1.5B-Instruct
+   - google/gemma-2-2b
+   - openai-community/gpt2
+   - bigscience/bloomz-560m
+   - facebook/opt-125m
+   - distilbert/distilgpt2
+   - meta-llama/Llama-3.1-8B-Instruct
+   - meta-llama/Meta-Llama-3-8B-Instruct
+   - trl-internal-testing/dummy-GPT2-correct-vocab
+   - microsoft/git-base
+   - liuhaotian/llava-v1.5-7b
+   - HuggingFaceH4/zephyr-7b-beta
+   - datificate/gpt2-small-spanish
+   - trl-internal-testing/tiny-random-LlamaForCausalLM
+   - microsoft/Florence-2-large
+   - meta-llama/Llama-2-7b-hf
+   - peft-internal-testing/tiny-dummy-qwen2
+   - mistralai/Mixtral-8x7B-Instruct-v0.1
+   - meta-llama/Meta-Llama-3-8B
+   - openai-community/gpt2-large
+   - mistralai/Mistral-7B-Instruct-v0.2
+   - meta-llama/Llama-3.1-8B
+   - THUDM/cogvlm-chat-hf
