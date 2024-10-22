@@ -101,3 +101,7 @@ The results of the experiments are saved as pickle files. The files contain dict
 ```
  accelerate launch --main_process_port 0  main.py --base_model_id meta-llama/Llama-2-70b-chat-hf --ft_model_id meta-llama/Llama-2-70b-chat-hf
 ```
+
+# Experiments
+
+Relevant scripts for running additional experiments described in our paper are in this folder. For example, there are experiments on retraining MLP blocks and evaluating our statistics.
