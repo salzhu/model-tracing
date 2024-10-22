@@ -31,7 +31,6 @@ pip install -r requirements-dev.txt
 The repository provides three main scripts:
 
 - `main.py`: Executes the main experiment pipeline for model tracing.
-- `generate.py`: Generates text using specified language models and saves the output to JSON files.
 - `launch.py`: Launches multiple experiments in parallel using slurm.
 
 ### `main.py`
@@ -54,6 +53,9 @@ The script accepts various command-line arguments:
 - `--align`: Whether to align the weights of the fine-tuned model to the base model.
 - `--dataset_id`: HuggingFace dataset ID for perplexity evaluation.
 - `--stat`: Statistic to calculate (options: "mode", "cos", "emb").
+- - csw_sp: cosine similarity of weights statistic (on MLP up projection matrices) w/ Spearman correlation
+  -  csh_sp: cosine similarity of MLP activations statistic w/ Spearman correlation
+  -  mlp_sp: robust statistic with permutation matching of MLP activations
 - `--attn`: Whether to consider attention weights in the "mode" statistic.
 - `--emb`: Whether to consider embedding weights in the "mode" statistic.
 - `--eval`: Whether to evaluate perplexity.
@@ -65,13 +67,9 @@ Example usage:
 python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat mode --attn --save results.p
 ```
 
-### `generate.py`
-
-This script generates text using specified language models and saves the generated text to a JSON file.
-
 ### `launch.py`
 
-This script launches multiple experiments in parallel using slurm. It reads model IDs from a YAML file and runs `main.py` for each pair of base and fine-tuned models.
+This script launches multiple experiments in parallel using slurm. It reads model IDs from a YAML file and runs `main.py` for each pair of base and fine-tuned models. Use the flag --flat all (defaulted) to run on all pairs of models from a YAML; or, --flat base_ft to run on all pairs of a 'base' model with a 'finetuned' model, or --flat specified to run on a specified list of pairs of models.
 
 ## Configuration
 
