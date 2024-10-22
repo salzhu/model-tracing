@@ -30,6 +30,6 @@ def calculate_l2_distance(model1, model2):
         num_layers += 1
 
     avg_l2_distance = total_squared_diff / num_layers
-    print(avg_l2_distance)
-    print(all_layers)
+    # print(avg_l2_distance)
+    # print(all_layers)
     return avg_l2_distance

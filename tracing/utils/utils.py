@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import os
+from scipy.stats import chi2
 
 def manual_seed(seed, fix_cudnn=True):
     random.seed(seed)
@@ -41,6 +42,16 @@ def cossim(x,y):
     similarities = x@y.T / (torch.linalg.norm(x,axis=-1).view(-1,1) * torch.linalg.norm(y,axis=-1).view(1,-1))
   
   return similarities.cpu()
+
+def fisher(p):
+  count = 0
+  chi_2 = 0
+  for pvalue in p:
+   if not np.isnan(pvalue):
+    chi_2 -= 2 * np.log(pvalue)
+    count += 1
+
+  return chi2.sf(chi_2, df=2*count)
 
 def normalize_mc_midpoint(mid, base, ft):
    slope = ft - base

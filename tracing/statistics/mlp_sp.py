@@ -21,7 +21,7 @@ def statistic(base_model,ft_model,dataloader,n_blocks=32):
         up_match = mlp_matching_up(base_model, ft_model, dataloader, i=i)
 
         cor, pvalue = scipy.stats.pearsonr(gate_match.tolist(), up_match.tolist())
-        print(i, pvalue)
+        print(i, pvalue, len(gate_match))
         stats.append(pvalue)
 
     return stats

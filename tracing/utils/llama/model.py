@@ -146,6 +146,37 @@ def rotate_model(model, num_layers=32, hidden_dim=4096):
 
     model.load_state_dict(weights_rotated)
 
+def rotate_model_t5(model, num_layers=32, hidden_dim=4096):
+
+    model.to('cuda')
+
+    rotation = ortho_group.rvs(dim=hidden_dim)
+    rotation = torch.tensor(rotation, dtype=torch.bfloat16).to('cuda')
+
+    weights = model.state_dict()
+    weights_rotated = model.state_dict()
+
+    weights_rotated['model.embed_tokens.weight'] = weights['model.embed_tokens.weight']@rotation
+
+    for i in range(num_layers):
+
+        weights_rotated[f'model.layers.{i}.input_layernorm.weight'] = 1 * torch.ones(hidden_dim).to('cuda') + 100000000 * torch.rand(hidden_dim).to('cuda')
+        weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight'] = 1 * torch.ones(hidden_dim).to('cuda') + 100000000 * torch.rand(hidden_dim).to('cuda')
+
+        weights_rotated[f'model.layers.{i}.self_attn.q_proj.weight'] = weights[f'model.layers.{i}.self_attn.q_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.layers.{i}.input_layernorm.weight']))
+        weights_rotated[f'model.layers.{i}.self_attn.k_proj.weight'] = weights[f'model.layers.{i}.self_attn.k_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.layers.{i}.input_layernorm.weight']))
+        weights_rotated[f'model.layers.{i}.self_attn.v_proj.weight'] = weights[f'model.layers.{i}.self_attn.v_proj.weight']@torch.diag(weights[f'model.layers.{i}.input_layernorm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.layers.{i}.input_layernorm.weight']))
+        weights_rotated[f'model.layers.{i}.self_attn.o_proj.weight'] = rotation.T@weights[f'model.layers.{i}.self_attn.o_proj.weight'] 
+
+        weights_rotated[f'model.layers.{i}.mlp.gate_proj.weight'] = weights[f'model.layers.{i}.mlp.gate_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight']))
+        weights_rotated[f'model.layers.{i}.mlp.up_proj.weight'] = weights[f'model.layers.{i}.mlp.up_proj.weight']@torch.diag(weights[f'model.layers.{i}.post_attention_layernorm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.layers.{i}.post_attention_layernorm.weight']))
+        weights_rotated[f'model.layers.{i}.mlp.down_proj.weight'] = rotation.T@weights[f'model.layers.{i}.mlp.down_proj.weight']
+
+    weights_rotated['model.norm.weight'] = 1 * torch.ones(hidden_dim).to('cuda') + 100000000 * torch.rand(hidden_dim).to('cuda')
+    weights_rotated['lm_head.weight'] = weights['lm_head.weight']@torch.diag(weights['model.norm.weight'])@rotation@torch.diag(torch.reciprocal(weights_rotated[f'model.norm.weight']))
+
+    model.load_state_dict(weights_rotated)
+
 # makes all post attention layer norms have value = 1 by multiplying mlp gate_proj and up_projs
 def fix_layer_norm(model, n_blocks=32, hidden_dim=4096):
     model.to('cuda')
