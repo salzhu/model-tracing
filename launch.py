@@ -37,7 +37,7 @@ if args.flat == "all":
                 f" '{args.python}" + f" --base_model_id {model_a} --ft_model_id {model_b} --save {results_path}'"
             subprocess.run(job,shell=True)
 
-elif args.flat == "base_ft": 
+elif args.flat == "split": 
     base_models = model_paths["base_models"]
     ft_models = model_paths["ft_models"]
 
