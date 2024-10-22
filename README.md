@@ -53,9 +53,11 @@ The script accepts various command-line arguments:
 - `--align`: Whether to align the weights of the fine-tuned model to the base model.
 - `--dataset_id`: HuggingFace dataset ID for perplexity evaluation.
 - `--stat`: Statistic to calculate (options: "mode", "cos", "emb").
-- - csw_sp: cosine similarity of weights statistic (on MLP up projection matrices) w/ Spearman correlation
+  - csw_sp: cosine similarity of weights statistic (on MLP up projection matrices) w/ Spearman correlation
+    - csw_sp_all: csw on all pairs of parameters with equal shape
   -  csh_sp: cosine similarity of MLP activations statistic w/ Spearman correlation
   -  mlp_sp: robust statistic with permutation matching of MLP activations
+     - mlp_sp_all: robust statistic on all pairs of MLP block activations
 - `--attn`: Whether to consider attention weights in the "mode" statistic.
 - `--emb`: Whether to consider embedding weights in the "mode" statistic.
 - `--eval`: Whether to evaluate perplexity.
@@ -64,7 +66,11 @@ The script accepts various command-line arguments:
 Example usage:
 
 ```bash
-python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat mode --attn --save results.p
+python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.5 --stat csw_sp --save results.p
+```
+
+```bash
+python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat mlp_sp --attn --save results.p
 ```
 
 ### `launch.py`
