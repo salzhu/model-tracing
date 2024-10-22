@@ -69,7 +69,7 @@ python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicu
 
 ### `launch.py`
 
-This script launches multiple experiments in parallel using slurm. It reads model IDs from a YAML file and runs `main.py` for each pair of base and fine-tuned models. Use the flag --flat all (defaulted) to run on all pairs of models from a YAML; or, --flat base_ft to run on all pairs of a 'base' model with a 'finetuned' model, or --flat specified to run on a specified list of pairs of models.
+This script launches multiple experiments in parallel using slurm. It reads model IDs from a YAML file and runs `main.py` for each pair of base and fine-tuned models. Use the flag --flat all (defaulted) to run on all pairs of models from a YAML (see config/llama7b.yaml); or, --flat split to run on all pairs of a 'base' model with a 'finetuned' model (see config/llama7b_split.yaml); or --flat specified to run on a specified list of pairs of models.
 
 ## Configuration
 
@@ -101,3 +101,7 @@ The results of the experiments are saved as pickle files. The files contain dict
 ```
  accelerate launch --main_process_port 0  main.py --base_model_id meta-llama/Llama-2-70b-chat-hf --ft_model_id meta-llama/Llama-2-70b-chat-hf
 ```
+
+# Experiments
+
+Relevant scripts for running additional experiments described in our paper are in this folder. For example, there are experiments on retraining MLP blocks and evaluating our statistics.

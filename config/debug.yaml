@@ -1,6 +1,0 @@
----
-ft_models:
-   - lmsys/vicuna-7b-v1.5
-base_models:
-   - meta-llama/Llama-2-7b-hf
-   
