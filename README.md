@@ -31,7 +31,6 @@ pip install -r requirements-dev.txt
 The repository provides three main scripts:
 
 - `main.py`: Executes the main experiment pipeline for model tracing.
-- `generate.py`: Generates text using specified language models and saves the output to JSON files.
 - `launch.py`: Launches multiple experiments in parallel using slurm.
 
 ### `main.py`
@@ -64,10 +63,6 @@ Example usage:
 ```bash
 python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat mode --attn --save results.p
 ```
-
-### `generate.py`
-
-This script generates text using specified language models and saves the generated text to a JSON file.
 
 ### `launch.py`
 
