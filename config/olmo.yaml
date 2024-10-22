@@ -1,6 +1,0 @@
----
-ft_models:
-   - /juice4/scr4/nlp/model-tracing/olmo_checkpoint/step0/seed_0_100M/
-base_models:
-   - /juice4/scr4/nlp/model-tracing/olmo_checkpoint/step0/seed_42_100M/
-   
