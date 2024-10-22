@@ -18,15 +18,16 @@ from tracing.utils.evaluate import prepare_hf_dataset, prepare_aya_dataset, prep
 from tracing.utils.utils import manual_seed
 
 from tracing.statistics.mc import statistic as mode_stat
-from tracing.statistics.emb import statistic as emb_stat
 from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
 from tracing.statistics.csw_sp import statistic as csw_sp_stat
+from tracing.statistics.csw_sp import statistic_all as csw_sp_all_stat
 from tracing.statistics.csw_mm import statistic as csw_mm_stat
 from tracing.statistics.csh_sp import statistic as csh_sp_stat
 from tracing.statistics.csh_mm import statistic as csh_mm_stat
 from tracing.statistics.csh_mm import statistic_rand as csh_mm_rand_stat
 from tracing.statistics.mlp_sp import statistic as mlp_sp_stat
+from tracing.statistics.mlp_sp import statistic_all as mlp_sp_all_stat
 from tracing.statistics.mlp_mm import statistic as mlp_mm_stat
 from tracing.statistics.perm_mc_l2 import statistic as perm_mc_l2_stat
 
@@ -85,7 +86,7 @@ if 'olmo' in args.base_model_id.lower():
 elif 'Alfred' in args.base_model_id:
     base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id)
 elif 'Salesforce' in args.base_model_id:
-    base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id,trust_remote_code=True)
+    base_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id,trust_remote_code=True)
 else:
     base_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
 
@@ -96,7 +97,7 @@ if 'olmo' in args.ft_model_id.lower():
 elif 'Alfred' in args.ft_model_id:
     ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id)
 elif 'Salesforce' in args.ft_model_id:
-    ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id,trust_remote_code=True)
+    ft_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id,trust_remote_code=True)
 else:
     ft_tokenizer = AutoTokenizer.from_pretrained(args.ft_model_id, use_fast=False)
 
@@ -122,15 +123,6 @@ elif args.stat == "mode":
     tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
 if 'olmo' in args.base_model_id.lower():
     tmp_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
-elif 'Alfred' in args.base_model_id:
-    tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id)
-elif 'Salesforce' in args.base_model_id:
-    tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id,trust_remote_code=True)
-else:
-    tmp_tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, use_fast=False)
-
-if 'Salesforce' in args.base_model_id: 
-    base_tokenizer = ft_tokenizer
 
 if args.dataset == "wikitext":
     dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", args.block_size, base_tokenizer)
@@ -170,6 +162,8 @@ if args.stat == "mode":
     results['alpha'] = args.alpha
 if args.stat == "csw_sp":
     test_stat = lambda base_model,ft_model : csw_sp_stat(base_model,ft_model)
+if args.stat == "csw_sp_all":
+    test_stat = lambda base_model,ft_model : csw_sp_all_stat(base_model,ft_model)  
 if args.stat == "csh_sp":
     test_stat = lambda base_model,ft_model : csh_sp_stat(base_model,ft_model,dataloader)
     
@@ -177,14 +171,12 @@ if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
 if args.stat == "csw_mm":
     test_stat = lambda base_model,ft_model : csw_mm_stat(base_model,ft_model,N_BLOCKS)
-if args.stat == "csh_robust":
+if args.stat == "csh_mm":
     test_stat = lambda base_model,ft_model : csh_mm_stat(base_model,ft_model,dataloader)
-if args.stat == "csh_robust_mlp_rand":
+if args.stat == "csh_mm_rand":
     test_stat = lambda base_model,ft_model : csh_mm_rand_stat(base_model,ft_model)
 if args.stat == "jsd":
-    test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)
-if args.stat == "emb":
-    test_stat = lambda base_model,ft_model : emb_stat(base_model,ft_model)
+    test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)  
 
 if args.stat == "perm_mc_l2":
     mc = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
@@ -193,6 +185,8 @@ if args.stat == "perm_mc_l2":
 
 if args.stat == "mlp_sp":
     test_stat = lambda base_model,ft_model : mlp_sp_stat(base_model,ft_model,dataloader)
+if args.stat == "mlp_sp_all":
+    test_stat = lambda base_model,ft_model : mlp_sp_all_stat(base_model,ft_model,dataloader) 
 if args.stat == "mlp_mm":
     test_stat = lambda base_model,ft_model : mlp_mm_stat(base_model,ft_model,0,dataloader)
 

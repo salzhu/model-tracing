@@ -28,6 +28,7 @@ if args.flat == "all":
             model_b = model_paths[j]
 
             job_id = model_a.replace("/","-") + "_AND_" + model_b.replace("/","-")
+            if 'miqu' not in job_id: continue
             if job_id[0] == '-': job_id = job_id[1:]
 
             log_path = args.save + "/logs/" + job_id + ".out"
