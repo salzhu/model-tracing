@@ -118,6 +118,19 @@ def get_statistic_from_file(filename):
 
     return stat
 
+def get_l2_stat_from_file(filename):
+    file = open(filename, 'r')
+
+    lines = file.readlines()
+    stats = []
+
+    for line in lines:
+        if len(line) >= 4 and line[4] == " ":
+            stats.append(line[:4])
+
+    return float(stats[-1])
+
+
 def get_layer_statistic_from_file(filename, layer):
     file = open(filename, 'r')
 
@@ -146,17 +159,20 @@ def plot_statistic_scatter(results_path, dict_ft, plot_path):
         if("huggyllama" in models): continue
         print(models)
         ft = int(dict_ft[models])
-        stat = get_statistic_from_file(results_path + '/' + file)
+        stat = get_l2_stat_from_file(results_path + '/' + file)
+        # stat = get_statistic_from_file(results_path + '/' + file)
         if not np.isnan(stat):
-            x.append(ft)
-            y.append(get_statistic_from_file(results_path + '/' + file))
+            y.append(ft)
+            # x.append(get_statistic_from_file(results_path + '/' + file))
+            x.append(get_l2_stat_from_file(results_path + '/' + file))
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 1))
 
-    plt.scatter(x, y, s=2)
+    plt.scatter(x, y, s=8)
             
-    plt.xlabel("Fine tuned")
-    plt.ylabel("Test statistic")
+    plt.xlabel("$p$-value")
+    plt.ylabel("Fine-tuned")
+    plt.ylim(-0.5,1.5)
     # plt.title(f"{}")
     plot_filename = f"{plot_path}.png"
 
@@ -177,8 +193,10 @@ def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log
             job_id = model_a.replace("/","-") + "_AND_" + model_b.replace("/","-") + ".out"
 
             if not os.path.exists(results_path + '/' + job_id): continue
+            print(job_id)
 
             stat = get_statistic_from_file(results_path + '/' + job_id)
+            # stat = get_l2_stat_from_file(results_path + '/' + job_id)
 
             if log: 
                 stat = np.log(stat)
@@ -188,7 +206,8 @@ def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log
 
     fig, ax = plt.subplots()
     fig.set_size_inches(20, 20)
-    im = ax.imshow(data)
+    # im = ax.imshow(data, aspect=0.7)
+    im = ax.imshow(data, cmap='viridis')
 
     divider = make_axes_locatable(ax)
     # cbar = divider.append_axes("right", size="5%", pad=0.05)
@@ -204,11 +223,20 @@ def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
             rotation_mode="anchor")
+    
+    texts = []
+    for i in range(len(models)):
+        text1 = []
+        for j in range(len(models)):
+            text1.append("")
+        texts.append(text1)
 
     # Loop over data dimensions and create text annotations.
     for i in range(len(models)):
         for j in range(len(models)):
-            text = ax.text(j, i, data[i, j],
+            texts[i][j] = str(data[i][j])
+            if data[i][j] == 0.0: texts[i][j] = "$\\varepsilon$"
+            text = ax.text(j, i, texts[i][j],
                         ha="center", va="center", color="w")
 
     ax.set_title(title)
@@ -310,7 +338,7 @@ def plot_histogram(results_path, dict_ft, plot_path):
     for file in dir_list:
         models = file[:file.find('.out')]
         print(models)
-        ft = int(dict_ft[models])
+        ft = int(dict_ft[models]) 
         stat = get_statistic_from_file(results_path + '/' + file)
         if not np.isnan(stat):
             if ft:
@@ -387,7 +415,7 @@ def plot_statistic_scatter_all_layers(results_path, dict_ft, plot_path):
     plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
     plt.close()
 
-def plot_pvalue_log(results_path, dict_ft, plot_path):
+def plot_pvalue(results_path, dict_ft, plot_path):
 
     pvalues = []
 
@@ -404,11 +432,22 @@ def plot_pvalue_log(results_path, dict_ft, plot_path):
             stat = get_layer_statistic_from_file(results_path + '/' + file, layer)
             if not np.isnan(stat):
                 pvalues.append(stat)
+    # for file in dir_list:
+    #     models = file[:file.find('.out')]
+    #     if("huggyllama" in models): continue
+    #     print(models)
+    #     ft = int(dict_ft[models])
+    #     if ft == True: continue
+    #     stat = get_statistic_from_file(results_path + '/' + file)
+    #     if not np.isnan(stat):
+    #         pvalues.append(stat)
 
     # x = np.arange(-10, 0, step=0.1)
     # x = np.power(10, x)
     x = np.arange(0,1,step=0.001)
     y = []
+    print(pvalues)
+    print(len(pvalues))
     
     for i in x:
         counter = 0
@@ -434,16 +473,31 @@ def plot_pvalue_log(results_path, dict_ft, plot_path):
 if __name__ == "__main__":
     dict_ft = get_dict_ft("/nlp/u/salzhu/model-tracing/config/llama_flat.yaml")
 
-    # plot_statistic_scatter("/juice4/scr4/nlp/model-tracing/llama_models_runs/mc_base_wikitext/logs", 
-    #                dict_ft, "test_statistic_plots/mc_base_wikitext")
+    # plot_statistic_scatter("/juice4/scr4/nlp/model-tracing/llama_models_runs/perm_mc_l2_wikitext/logs", 
+    #                dict_ft, "test_statistic_plots/l2_pvalue_horizontal")
 
     # plot_statistic_grid("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
     #                     base_ordered, "MLP up/gate matching p-value on permuted model pairs (random inputs for matching)", 
     #                     "/nlp/u/salzhu/test_statistic_tables/mlp_match_rand_rot_perm_lap", 
     #                     3, log=False)
+
+    # plot_statistic_grid("/juice4/scr4/nlp/model-tracing/csh_0928_reruns/logs", 
+    #                     base_ordered, "", 
+    #                     "/nlp/u/salzhu/csh_0929_cols", 
+    #                     3, log=False)
+
+    # plot_statistic_grid("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+    #                     base_ordered, "", 
+    #                     "/nlp/u/salzhu/robust_0929", 
+    #                     3, log=False)
+
+    # plot_statistic_grid("/juice4/scr4/nlp/model-tracing/llama_models_runs/perm_mc_l2_wikitext/logs", 
+    #                     base_ordered, "", 
+    #                     "/nlp/u/salzhu/l2_0927", 
+    #                     3, log=False)
     
     # plot_statistic_scatter("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", dict_ft, 
-    #                        "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap")
+    #                        "/nlp/u/salzhu/test_statistic_plots/mlp_sp_final")
 
     # plot_statistic_scatter_layer("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", dict_ft, 
     #                        "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_layer31", 31)
@@ -457,11 +511,11 @@ if __name__ == "__main__":
     #                     dict_ft, 
     #                     "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_all_layers")
     
-    # plot_pvalue_log("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
-    #                dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_match_rand_rot_perm_lap_pvalue_log")
+    plot_pvalue("/juice4/scr4/nlp/model-tracing/mlp_match_rand_rot_perm_lap/logs", 
+                   dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_sp_final")
 
-    plot_histogram("/juice4/scr4/nlp/model-tracing/mlp_match_med_max_layer0/logs", 
-                   dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_med_max_histogram")
+    # plot_histogram("/juice4/scr4/nlp/model-tracing/mlp_match_med_max_layer0/logs", 
+    #                dict_ft, "/nlp/u/salzhu/test_statistic_plots/mlp_med_max_histogram")
 
     # checkpoints = {
     #     "100M": 1e8,
