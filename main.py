@@ -32,7 +32,7 @@ parser.add_argument('--base_model_id',default="meta-llama/Llama-2-7b-hf",type=st
 parser.add_argument('--base_model_ckpt',default=3000,type=int)
 
 parser.add_argument('--ft_model_id',default="lmsys/vicuna-7b-v1.1",type=str)
-parser.add_argument('--ft_model_ckpt',default=3000,type=int)
+parser.add_argument('--ft_model_ckpt',default=143000,type=int)
 
 parser.add_argument('--dataset',default="wikitext",type=str)
 parser.add_argument('--block_size',default=512,type=int)
