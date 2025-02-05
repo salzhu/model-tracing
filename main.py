@@ -20,15 +20,12 @@ from tracing.utils.utils import manual_seed
 from tracing.statistics.mc import statistic as mode_stat
 from tracing.statistics.l2 import statistic as l2_stat
 from tracing.statistics.jsd import statistic as jsd_stat
-from tracing.statistics.csw_sp import statistic as csw_sp_stat
-from tracing.statistics.csw_sp import statistic_all as csw_sp_all_stat
-from tracing.statistics.csw_mm import statistic as csw_mm_stat
-from tracing.statistics.csh_sp import statistic as csh_sp_stat
-from tracing.statistics.csh_mm import statistic as csh_mm_stat
-from tracing.statistics.csh_mm import statistic_rand as csh_mm_rand_stat
-from tracing.statistics.mlp_sp import statistic as mlp_sp_stat
-from tracing.statistics.mlp_sp import statistic_all as mlp_sp_all_stat
-from tracing.statistics.mlp_mm import statistic as mlp_mm_stat
+from tracing.statistics.csu import statistic as csu_stat
+from tracing.statistics.csu import statistic_all as csu_all_stat
+from tracing.statistics.csh import statistic as csh_stat
+from tracing.statistics.match import statistic as match_stat
+from tracing.statistics.match import statistic_all as match_all_stat
+from tracing.statistics.match_mm import statistic as match_mm_stat
 from tracing.statistics.perm_mc_l2 import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
@@ -160,35 +157,29 @@ print("dataset loaded")
 if args.stat == "mode":
     test_stat = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb, args.alpha)
     results['alpha'] = args.alpha
-if args.stat == "csw_sp":
-    test_stat = lambda base_model,ft_model : csw_sp_stat(base_model,ft_model)
-if args.stat == "csw_sp_all":
-    test_stat = lambda base_model,ft_model : csw_sp_all_stat(base_model,ft_model)  
-if args.stat == "csh_sp":
-    test_stat = lambda base_model,ft_model : csh_sp_stat(base_model,ft_model,dataloader)
-    
 if args.stat == "l2":
     test_stat = lambda base_model,ft_model : l2_stat(base_model,ft_model)
-if args.stat == "csw_mm":
-    test_stat = lambda base_model,ft_model : csw_mm_stat(base_model,ft_model,N_BLOCKS)
-if args.stat == "csh_mm":
-    test_stat = lambda base_model,ft_model : csh_mm_stat(base_model,ft_model,dataloader)
-if args.stat == "csh_mm_rand":
-    test_stat = lambda base_model,ft_model : csh_mm_rand_stat(base_model,ft_model)
 if args.stat == "jsd":
     test_stat = lambda base_model,ft_model : jsd_stat(base_model,ft_model, dataloader)  
+
+if args.stat == "csu":
+    test_stat = lambda base_model,ft_model : csu_stat(base_model,ft_model)
+if args.stat == "csu_all":
+    test_stat = lambda base_model,ft_model : csu_all_stat(base_model,ft_model)  
+if args.stat == "csh_sp":
+    test_stat = lambda base_model,ft_model : csh_stat(base_model,ft_model,dataloader)
+    
+if args.stat == "match":
+    test_stat = lambda base_model,ft_model : match_stat(base_model,ft_model,dataloader)
+if args.stat == "match_all":
+    test_stat = lambda base_model,ft_model : match_all_stat(base_model,ft_model,dataloader) 
+if args.stat == "match_mm":
+    test_stat = lambda base_model,ft_model : match_mm_stat(base_model,ft_model,0,dataloader)
 
 if args.stat == "perm_mc_l2":
     mc = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
     l2 = lambda base_model,ft_model : l2_stat(base_model,ft_model)
     test_stat = lambda base_model,ft_model : perm_mc_l2_stat(base_model,ft_model,mc,l2,args.num_perm)
-
-if args.stat == "mlp_sp":
-    test_stat = lambda base_model,ft_model : mlp_sp_stat(base_model,ft_model,dataloader)
-if args.stat == "mlp_sp_all":
-    test_stat = lambda base_model,ft_model : mlp_sp_all_stat(base_model,ft_model,dataloader) 
-if args.stat == "mlp_mm":
-    test_stat = lambda base_model,ft_model : mlp_mm_stat(base_model,ft_model,0,dataloader)
 
 if args.eval is True:
     results['base loss'] = sum(evaluate(base_model,dataloader))
