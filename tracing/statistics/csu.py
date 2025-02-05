@@ -38,7 +38,7 @@ def csw_sp(model1,model2):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
         elif param1.dim() == 1: continue
-        elif "mlp.gate_proj" not in name1: continue
+        elif "mlp.up_proj" not in name1: continue
         elif param1.shape != param2.shape:
             print(f"{name1} shape mismatch")
             continue
