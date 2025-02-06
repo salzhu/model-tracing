@@ -140,7 +140,6 @@ class CSWSearch:
 
 csw = CSWSearch()
 
-# Example usage:
 def add_params(model_list):
     
     # Add weight matrices from different models/layers
@@ -158,12 +157,12 @@ def get_similar_param(param, k=5):
     return csw.find_similar_weights("--", param, k=k)
 
 def main():
-    model_list = ["meta-llama/Llama-2-7b-hf", "lmsys/vicuna-7b-v1.5", "lmsys/vicuna-7b-v1.1"]
-    # , "codellama/CodeLlama-7b-Python-hf"
-    # yaml.load(open(args.models, 'r'), Loader=Loader)
+    # Model list to add from yaml
+    model_list = yaml.load(open("config/llama7b.yaml", 'r'), Loader=Loader)
     add_params(model_list)
     csw.save("indexes")
 
+    # Weight matrix to search for
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", torch_dtype=torch.bfloat16)
     weights = model.state_dict()
     attn_name = "model.layers.0.self_attn.o_proj.weight"
