@@ -1,3 +1,12 @@
+"""
+Runs statistic Cosine Similarity of Weights on all tensors of two given models, if they match in size. 
+Part of the "Unconstrained Setting" experiments (see StripedHyena experiments). 
+Relevant for hybrid models where only some parameters are shared. 
+
+To run: Use the HuggingFace Ids for the two models in Line 65-66. 
+Prints p-values between tensors that align in dimension. 
+"""
+
 import torch
 import scipy 
 from scipy.optimize import linear_sum_assignment as LAP
@@ -15,13 +24,8 @@ def csw_sp_pair(base_model,ft_model,layer_name_base, layer_name_ft):
 
     matched = LAP(cossim(base_mat.type(torch.float64),ft_mat.type(torch.float64)), maximize=True)
     matched = matched[1]
-    # csm = cossim(base_mat,ft_mat)
-    # csm += (0.01)*torch.randn(csm.shape)
-    # matched = torch.argmax(csm,axis=-1)
+
     orig = torch.arange(len(matched))
-
-    # print(len(orig))
-
     cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
     return pvalue
 
@@ -50,30 +54,17 @@ def csw_models(base_model,ft_model):
                 print(name1,name2,pval)
                 pvalues.append(pval)
 
-    # (name1, param1) in base_model.named_parameters():
-    #     for (name2, param2)in ft_model.named_parameters():
-    # # for (name1, param1), (name2, param2) in zip(
-    # #     base_model.named_parameters(), ft_model.named_parameters()
-    # # ):
-    #         if param1.shape == param2.shape and param1.dim() != 1:
-    #             pval = csw_sp_pair(base_model,ft_model,name1,name2)
-    #             print(name1,name2,pval)
-    #             pvalues.append(pval)
-
-    print(pvalues)
-
     res = 0
 
     if len(pvalues) == 0: res = 999
     else: res = fisher(pvalues)
     
-    print(res)
     return res
 
 
 def main():
-    model_1_id = "openai-community/gpt2" # "meta-llama/Llama-2-7b-hf"
-    model_2_id = "trl-internal-testing/dummy-GPT2-correct-vocab" # "lmsys/vicuna-7b-v1.5"
+    model_1_id = "openai-community/gpt2" 
+    model_2_id = "trl-internal-testing/dummy-GPT2-correct-vocab" 
 
     print(model_1_id, model_2_id)
 
