@@ -16,13 +16,11 @@ def csw_sp_layer(base_model,ft_model,layer_name):
     base_mat = base_model.state_dict()[layer_name]
     ft_mat = ft_model.state_dict()[layer_name]
 
-    # matched = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
-    # matched = match_wmats(base_mat,ft_mat)
     matched = LAP(cossim(base_mat.type(torch.float64),ft_mat.type(torch.float64)), maximize=True)
     matched = matched[1]
     orig = torch.arange(len(matched))
 
-    cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
+    cor, pvalue = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
     return pvalue
 
 def csw_sp(model1,model2):
@@ -39,18 +37,7 @@ def csw_sp(model1,model2):
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
         elif param1.dim() == 1: continue
         elif "mlp.up_proj" not in name1: continue
-        elif param1.shape != param2.shape:
-            print(f"{name1} shape mismatch")
-            continue
-            # if name1 == "model.embed_tokens.weight" or name1 == "lm_head.weight":
-            #     print(
-            #         f"Skipping {name1} because of shape mismatch: {param1.shape} != {param2.shape}"
-            #     )
-            #     p_values.append(np.nan)
-            #     continue
-            # raise ValueError(
-            #     f"Model parameter shapes do not match for {name1}: {param1.shape} != {param2.shape}"
-            # )
+
         pvalue = csw_sp_layer(model1, model2, name1)
         if not np.isnan(pvalue):
             chi_squared -= 2 * np.log(pvalue)
@@ -71,7 +58,7 @@ def csw_sp_pair(base_model,ft_model,layer_name_base, layer_name_ft):
     matched = matched[1]
     orig = torch.arange(len(matched))
 
-    cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
+    cor, pvalue = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
     return pvalue
 
 def statistic_all(base_model,ft_model):
