@@ -25,7 +25,6 @@ from tracing.statistics.csu import statistic_all as csu_all_stat
 from tracing.statistics.csh import statistic as csh_stat
 from tracing.statistics.match import statistic as match_stat
 from tracing.statistics.match import statistic_all as match_all_stat
-from tracing.statistics.match_mm import statistic as match_mm_stat
 from tracing.statistics.perm_mc_l2 import statistic as perm_mc_l2_stat
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
@@ -173,8 +172,6 @@ if args.stat == "match":
     test_stat = lambda base_model,ft_model : match_stat(base_model,ft_model,dataloader)
 if args.stat == "match_all":
     test_stat = lambda base_model,ft_model : match_all_stat(base_model,ft_model,dataloader) 
-if args.stat == "match_mm":
-    test_stat = lambda base_model,ft_model : match_mm_stat(base_model,ft_model,0,dataloader)
 
 if args.stat == "perm_mc_l2":
     mc = lambda base_model,ft_model : mode_stat(base_model,ft_model,tmp_model,dataloader,args.attn,args.emb)
