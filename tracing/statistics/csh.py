@@ -41,7 +41,7 @@ def csh_sp_dataloader_block(base_model,ft_model,dataloader,i):
     matched = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
     orig = torch.arange(len(matched))
 
-    cor, pvalue = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
+    cor, pvalue = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
     return pvalue
 
 def csh_sp_dataloader(base_model,ft_model,dataloader,n_blocks=32):
@@ -56,13 +56,9 @@ def csh_sp_dataloader(base_model,ft_model,dataloader,n_blocks=32):
 
         layer = str(i)
 
-        # base_hooks[layer] = lambda m,inp,op,layer=layer,feats=feats: hook_in(m,inp,op,feats,"base_"+layer)
-        # base_model.model.layers[i].mlp.down_proj.register_forward_hook(base_hooks[layer])
         base_hooks[layer] = lambda m,inp,op,layer=layer,feats=feats: hook(m,inp,op,feats,"base_"+layer)
         base_model.model.layers[i].mlp.up_proj.register_forward_hook(base_hooks[layer])
 
-        # ft_hooks[layer] = lambda m,inp,op,layer=layer,feats=feats: hook_in(m,inp,op,feats,"ft_"+layer)
-        # ft_model.model.layers[i].mlp.down_proj.register_forward_hook(ft_hooks[layer])
         ft_hooks[layer] = lambda m,inp,op,layer=layer,feats=feats: hook(m,inp,op,feats,"ft_"+layer)
         ft_model.model.layers[i].mlp.up_proj.register_forward_hook(ft_hooks[layer])
 
@@ -83,12 +79,11 @@ def csh_sp_dataloader(base_model,ft_model,dataloader,n_blocks=32):
         base_mat = base_mat.T
         ft_mat = ft_mat.T
 
-        # matched = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
         matched = LAP(cossim(base_mat.type(torch.float64),ft_mat.type(torch.float64)), maximize=True)
         matched = matched[1]
         orig = torch.arange(len(matched))
 
-        cor, temp = scipy.stats.pearsonr(matched.tolist(), orig.tolist())
+        cor, temp = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
 
         if not np.isnan(temp):
             chi_squared -= 2 * np.log(temp)
