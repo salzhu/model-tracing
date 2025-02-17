@@ -21,7 +21,7 @@ def statistic(base_model,ft_model,dataloader,n_blocks=32):
         gate_match = mlp_matching_gate(base_model, ft_model, dataloader, i=i)
         up_match = mlp_matching_up(base_model, ft_model, dataloader, i=i)
 
-        cor, pvalue = scipy.stats.pearsonr(gate_match.tolist(), up_match.tolist())
+        cor, pvalue = scipy.stats.spearmanr(gate_match.tolist(), up_match.tolist())
         print(i, pvalue, len(gate_match))
         stats.append(pvalue)
 
@@ -30,13 +30,9 @@ def statistic(base_model,ft_model,dataloader,n_blocks=32):
 def statistic_layer(base_model,ft_model,dataloader,i=0):
     gate_perm = mlp_matching_gate(base_model, ft_model, dataloader, i=i)
     up_perm = mlp_matching_up(base_model, ft_model, dataloader, i=i)
-    cor, pvalue = scipy.stats.pearsonr(gate_perm.tolist(), up_perm.tolist())
+    cor, pvalue = scipy.stats.spearmanr(gate_perm.tolist(), up_perm.tolist())
     return pvalue
 
-# sends input sequences provided via dataloader through full model, uses activations from mlp i
-# robust to rotation because of unrotated input
-# prints the median of max for cosine similarity matching; and returns matched permutation 
-# matching done by doing argmax of cosine similarity matrix across rows (can uncomment using LAP)
 def mlp_matching_gate(base_model, ft_model, dataloader, i=0):
     feats = defaultdict(list)
 
@@ -62,12 +58,6 @@ def mlp_matching_gate(base_model, ft_model, dataloader, i=0):
     ft_handle.remove()
 
     perm = match_wmats(base_mat,ft_mat)
-
-    # Alternatively: Using cosine similarity matrix and taking argmax (does not work as well)
-    """
-    mat = cossim(base_mat,ft_mat)
-    perm = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
-    """
     
     return perm
 
@@ -96,12 +86,6 @@ def mlp_matching_up(base_model, ft_model, dataloader, i=0):
     ft_handle.remove()
 
     perm = match_wmats(base_mat,ft_mat)
-
-    # Alternatively: Using cosine similarity matrix and taking argmax (does not work as well)
-    """
-    mat = cossim(base_mat,ft_mat)
-    perm = torch.argmax(cossim(base_mat,ft_mat),axis=-1)
-    """
     
     return perm
 
@@ -110,7 +94,7 @@ def mlp_layers(base_model,ft_model,dataloader,i,j):
     gate_match = mlp_matching_gate(base_model, ft_model, dataloader, i,j)
     up_match = mlp_matching_up(base_model, ft_model, dataloader, i,j)
 
-    cor, pvalue = scipy.stats.pearsonr(gate_match.tolist(), up_match.tolist())
+    cor, pvalue = scipy.stats.spearmanr(gate_match.tolist(), up_match.tolist())
 
     return pvalue
 
