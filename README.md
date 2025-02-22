@@ -53,8 +53,8 @@ The script accepts various command-line arguments:
 - `--align`: Whether to align the weights of the fine-tuned model to the base model.
 - `--dataset_id`: HuggingFace dataset ID for perplexity evaluation.
 - `--stat`: Statistic to calculate (options: "mode", "cos", "emb").
-  - csw_sp: cosine similarity of weights statistic (on MLP up projection matrices) w/ Spearman correlation
-    - csw_sp_all: csw on all pairs of parameters with equal shape
+  - csu_sp: cosine similarity of weights statistic (on MLP up projection matrices) w/ Spearman correlation
+    - csu_sp_all: csu on all pairs of parameters with equal shape
   -  csh_sp: cosine similarity of MLP activations statistic w/ Spearman correlation
   -  mlp_sp: robust statistic with permutation matching of MLP activations
      - mlp_sp_all: robust statistic on all pairs of MLP block activations
@@ -66,7 +66,7 @@ The script accepts various command-line arguments:
 Example usage:
 
 ```bash
-python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.5 --stat csw_sp --save results.p
+python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.5 --stat csu_sp --save results.p
 ```
 
 ```bash
@@ -100,7 +100,7 @@ The results of the experiments are saved as pickle files. The files contain dict
 
 ### 70B runs
 ```
- python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B --stat csw_sp
+ python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B --stat csu_sp
 ```
 
 ### accelerate:
@@ -112,4 +112,4 @@ The results of the experiments are saved as pickle files. The files contain dict
 
 Relevant scripts for running additional experiments described in our paper are in this folder. For example, there are experiments on retraining MLP blocks and evaluating our statistics.
 
-These include `experiments/localized_testing.py` (Section 3.2.1) for fine-grained forensics and layer-matching between two models; `experiments/csw_full.py` (Section 3.2.1) for full parameter-matching between any two model architectures for hybrid models; `experiments/generalized_match.py` (Section 2.3.2, 3.2.3, 3.2.4) for the generalized robust test that involes retraining or distilling GLU MLPs; and `experiments/huref.py` (Appendix F) where we reproduce and break the invariants from a related work (Zeng et al. 2024). 
+These include `experiments/localized_testing.py` (Section 3.2.1) for fine-grained forensics and layer-matching between two models; `experiments/csu_full.py` (Section 3.2.1) for full parameter-matching between any two model architectures for hybrid models; `experiments/generalized_match.py` (Section 2.3.2, 3.2.3, 3.2.4) for the generalized robust test that involes retraining or distilling GLU MLPs; and `experiments/huref.py` (Appendix F) where we reproduce and break the invariants from a related work (Zeng et al. 2024). 
