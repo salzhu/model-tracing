@@ -30,12 +30,11 @@ def csw_sp(model1,model2):
 
     p_values = []
 
-    for (name1, param1), (name2, param2) in zip(
-        model1.named_parameters(), model2.named_parameters()
+    for name1,name2 in zip(
+        list(model1.state_dict().keys()), list(model2.state_dict().keys())
     ):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
-        elif param1.dim() == 1: continue
         elif "mlp.up_proj" not in name1: continue
 
         pvalue = csw_sp_layer(model1, model2, name1)
