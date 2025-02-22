@@ -100,7 +100,7 @@ The results of the experiments are saved as pickle files. The files contain dict
 
 ### 70B runs
 ```
- python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B
+ python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B --stat csw_sp
 ```
 
 ### accelerate:
