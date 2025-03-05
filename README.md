@@ -70,7 +70,7 @@ python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicu
 ```
 
 ```bash
-python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.1 --permute --align --dataset wikitext --stat match --attn --save results.p
+python main.py --base_model_id meta-llama/Llama-2-7b-hf --ft_model_id lmsys/vicuna-7b-v1.5 --permute --align --dataset wikitext --stat match --attn --save results.p
 ```
 
 ### `launch.py`
@@ -101,11 +101,6 @@ The results of the experiments are saved as pickle files. The files contain dict
 ### 70B runs
 ```
  python main.py --base_model_id meta-llama/Llama-2-70b-hf --ft_model_id meta-llama/Meta-Llama-3-70B --stat csu
-```
-
-### accelerate:
-```
- accelerate launch --main_process_port 0  main.py --base_model_id meta-llama/Llama-2-70b-chat-hf --ft_model_id meta-llama/Llama-2-70b-chat-hf
 ```
 
 # Experiments

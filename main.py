@@ -58,9 +58,10 @@ parser.add_argument('--aya_language', default="eng", type=str, help="Language co
 
 args = parser.parse_args()
 
+
 from huggingface_hub import login
-if args.token != "":
-    hf_token = os.environ["HUGGING_FACE_HUB_TOKEN"]
+if args.token == "":
+    hf_token = os.environ["HF_TOKEN"]
 else:
     hf_token = args.token
 login(token=hf_token)
@@ -75,7 +76,10 @@ results['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode
 manual_seed(args.seed)
 
 dtype = torch.bfloat16
-base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
+low_cpu_mem_usage = "70b" in args.base_model_id.lower()  # Enable low memory loading if "70b" is in model name
+
+print(f"Low CPU Mem Usage Flag set to {low_cpu_mem_usage}")
+base_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype, low_cpu_mem_usage=low_cpu_mem_usage)
 if 'olmo' in args.base_model_id.lower():
     tokenizer_name = 'allenai/OLMo-1.7-7B-hf' if 'olmo' in args.base_model_id.lower() else args.base_model_id
     base_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)

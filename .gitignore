@@ -3,3 +3,4 @@
 *.csv
 results/
 **/__pycache__/*
+*.p

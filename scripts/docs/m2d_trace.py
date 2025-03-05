@@ -15,7 +15,10 @@ import glob
 import gc
 
 block_size = 2048
-
+"""
+Script for running ablation of tests on m2d2 dataset rather
+than simply wikitext
+"""
 
 
 def group_texts(examples):
