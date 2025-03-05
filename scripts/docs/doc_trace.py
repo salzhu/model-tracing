@@ -1,13 +1,12 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
-import itertools
 import os
 from datasets import load_dataset
 from tqdm import tqdm
 import math
 import matplotlib.pyplot as plt
 import csv
-from utils import calculate_l2_distance, interpolate_models
+from utils import interpolate_models
 import time
 import copy
 import argparse
@@ -15,7 +14,6 @@ import glob
 
 
 block_size = 512
-
 
 
 def group_texts(examples):
@@ -65,7 +63,16 @@ def main(args):
     tokenizer.pad_token = tokenizer.eos_token
 
     # Scan the directory for JSON files based on the test name argument
-    columns_ignored = ['text', 'added', 'id', 'lang', 'metadata', 'source', 'timestamp', 'subdomain']
+    columns_ignored = [
+        "text",
+        "added",
+        "id",
+        "lang",
+        "metadata",
+        "source",
+        "timestamp",
+        "subdomain",
+    ]
     json_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/json_files_{args.test_name}"
     json_files = glob.glob(f"{json_dir}/*.json")
     save_dir = f"/juice4/scr4/nlp/model-tracing/dolma_program_languages/results_{args.test_name}"
@@ -77,7 +84,6 @@ def main(args):
 
         # Prepare dataset
         eval_dataset = load_dataset("json", data_files=json_file)
-        
 
         def tokenize_function(examples):
             return tokenizer(examples["text"])
@@ -91,7 +97,6 @@ def main(args):
             batch_size=1,
             num_proc=1,
         )
-        
 
         # Prepare for evaluation. Batch size is optimized for ~7B model
         training_args = TrainingArguments(
@@ -105,23 +110,22 @@ def main(args):
         alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
         model = copy.deepcopy(models[0])
         trainer = Trainer(model=model, args=training_args, eval_dataset=lm_datasets)
-        print(f"create data loader")
-        eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
-        
+        print("create data loader")
+        eval_dataloader = trainer.get_test_dataloader(lm_datasets["train"])
+
         for idx_a, idx_b in tqdm(model_pairs, desc="Model Interpolation"):
             model_a = models[idx_a]
             model_b = models[idx_b]
             perplexities = []
             model_a_name = model_a.config._name_or_path.split("/")[-1]
             model_b_name = model_b.config._name_or_path.split("/")[-1]
-            
+
             for alpha in tqdm(
                 alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
             ):
                 interpolated_model = interpolate_models(model_a, model_b, alpha)
                 # cast to bfloat16 before GPU
                 interpolated_model = interpolated_model.half().to(device)
-                
 
                 start_time = time.time()
                 losses = []
@@ -159,9 +163,7 @@ def main(args):
             json_filename = os.path.splitext(os.path.basename(json_file))[0]
             csv_filename = f"perplexities_{json_filename}.csv"
             csv_full_path = f"{save_dir}/{csv_filename}"
-            csv_header = ["Model Pair"] + [
-                f"Alpha {alpha}" for alpha in alphas
-            ]
+            csv_header = ["Model Pair"] + [f"Alpha {alpha}" for alpha in alphas]
             if not os.path.exists(csv_full_path):
                 with open(csv_full_path, "w", newline="") as csvfile:
                     writer = csv.writer(csvfile)
@@ -181,7 +183,9 @@ def main(args):
             plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
 
             # Save the plot as a PNG file
-            plot_filename = f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}_{json_filename}.png"
+            plot_filename = (
+                f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}_{json_filename}.png"
+            )
             plot_full_path = f"{save_dir}/{plot_filename}"
             plt.savefig(plot_full_path, dpi=300, bbox_inches="tight")
             plt.close()
@@ -190,8 +194,11 @@ def main(args):
     execution_time = end_time - start_time
     print(f"Total execution time: {execution_time} seconds")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
-    parser.add_argument("--test_name", type=str, default="js", help="Test name (e.g., cpp, python, js)")
+    parser.add_argument(
+        "--test_name", type=str, default="js", help="Test name (e.g., cpp, python, js)"
+    )
     args = parser.parse_args()
     main(args)

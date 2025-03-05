@@ -7,9 +7,8 @@ from tqdm import tqdm
 import math
 import matplotlib.pyplot as plt
 import csv
-from utils import calculate_l2_distance, interpolate_models
+from utils import interpolate_models
 import time
-import copy
 import argparse
 import glob
 import gc
@@ -40,6 +39,7 @@ def group_texts(examples):
 def load_model(model_name):
     return AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
 
+
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -47,7 +47,7 @@ def main(args):
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     model_arch = args.model_arch
-    if model_arch == 'llama':
+    if model_arch == "llama":
         model_list = [
             "meta-llama/Llama-2-7b-hf",
             "meta-llama/Llama-2-7b-chat-hf",
@@ -59,27 +59,66 @@ def main(args):
             "EleutherAI/llemma_7b",
             "LLM360/Amber",
         ]
-    elif model_arch == 'olmo':
+    elif model_arch == "olmo":
         model_list = [
             "/scr/ahmedah/olmo/step1000_4B_tokens/seed_0_4B",
-            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B"
+            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B",
         ]
 
     tokenizer = AutoTokenizer.from_pretrained(model_list[0])
     tokenizer.pad_token = tokenizer.eos_token
 
     test_cases = [
-        {"test_name": folder_name, "json_dir": f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/{folder_name}", "save_dir": f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/results_{folder_name}", "columns_ignored": ['text', 'added', 'id', 'source', 'timestamp', 'subdomain']}
+        {
+            "test_name": folder_name,
+            "json_dir": f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/{folder_name}",
+            "save_dir": f"/juice4/scr4/nlp/model-tracing/m2d2_s2orc/results_{folder_name}",
+            "columns_ignored": ["text", "added", "id", "source", "timestamp", "subdomain"],
+        }
         for folder_name in [
-            "AI", "CV", "ET", "IM", "mtrl-sci", "stat-mech",
-            "AR", "CY", "IR", "NA", "str-el",
-            "art", "DB", "FL", "supr-con",
-            "CC", "DC", "GA", "LG", "phil",
-            "CE", "dis-nn", "GL", "LO",
-            "CG", "DL", "GR", "MA", "quant-gas",
-            "CL", "DM", "GT", "mes-hall",
-            "CO", "DS", "HC", "MM", "soft",
-            "CR", "EP", "HE", "MS", "SR"
+            "AI",
+            "CV",
+            "ET",
+            "IM",
+            "mtrl-sci",
+            "stat-mech",
+            "AR",
+            "CY",
+            "IR",
+            "NA",
+            "str-el",
+            "art",
+            "DB",
+            "FL",
+            "supr-con",
+            "CC",
+            "DC",
+            "GA",
+            "LG",
+            "phil",
+            "CE",
+            "dis-nn",
+            "GL",
+            "LO",
+            "CG",
+            "DL",
+            "GR",
+            "MA",
+            "quant-gas",
+            "CL",
+            "DM",
+            "GT",
+            "mes-hall",
+            "CO",
+            "DS",
+            "HC",
+            "MM",
+            "soft",
+            "CR",
+            "EP",
+            "HE",
+            "MS",
+            "SR",
         ]
     ]
 
@@ -87,7 +126,7 @@ def main(args):
         test_name = test_case["test_name"]
         json_dir = test_case["json_dir"]
         save_dir = test_case["save_dir"]
-        columns_ignored = ['text', 'added', 'id', 'source', 'subdomain']
+        columns_ignored = ["text", "added", "id", "source", "subdomain"]
 
         json_files = glob.glob(f"{json_dir}/*.json")
         if not os.path.exists(save_dir):
@@ -122,7 +161,7 @@ def main(args):
             alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
             initial_model = load_model(model_list[0])
             trainer = Trainer(model=initial_model, args=training_args, eval_dataset=lm_datasets)
-            eval_dataloader = trainer.get_test_dataloader(lm_datasets['train'])
+            eval_dataloader = trainer.get_test_dataloader(lm_datasets["train"])
             del initial_model
 
             model_pairs = list(itertools.combinations(enumerate(model_list), 2))
@@ -137,7 +176,9 @@ def main(args):
             current_model_a, current_model_b = None, None
             current_model_a_name, current_model_b_name = None, None
 
-            for (idx_a, model_a_name), (idx_b, model_b_name) in tqdm(model_pairs, desc="Model Interpolation"):
+            for (idx_a, model_a_name), (idx_b, model_b_name) in tqdm(
+                model_pairs, desc="Model Interpolation"
+            ):
                 if idx_a < idx_b:
                     perplexities = []
 
@@ -157,9 +198,12 @@ def main(args):
 
                     with torch.no_grad():
                         for alpha in tqdm(
-                            alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
+                            alphas,
+                            desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}",
                         ):
-                            interpolated_model = interpolate_models(current_model_a, current_model_b, alpha, model_arch=model_arch)
+                            interpolated_model = interpolate_models(
+                                current_model_a, current_model_b, alpha, model_arch=model_arch
+                            )
                             interpolated_model = interpolated_model.half().to(device)
 
                             start_time = time.time()
@@ -196,9 +240,7 @@ def main(args):
                     model_b_name = model_b_name.split("/")[-1]
                     json_filename = os.path.splitext(os.path.basename(json_file))[0]
                     csv_filename = f"{csv_dir}/perplexities_{json_filename}.csv"
-                    csv_header = ["Model Pair"] + [
-                        f"Alpha {alpha}" for alpha in alphas
-                    ]
+                    csv_header = ["Model Pair"] + [f"Alpha {alpha}" for alpha in alphas]
 
                     if not os.path.exists(csv_filename):
                         with open(csv_filename, "w", newline="") as csvfile:
@@ -217,13 +259,21 @@ def main(args):
                     plt.ylabel("Perplexity")
                     plt.title(f"{model_a_name} (Left) vs {model_b_name} (Right)")
 
-                    plot_filename = f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}_{json_filename}.png"
+                    plot_filename = (
+                        f"alpha_vs_perplexity_{model_a_name}_vs_{model_b_name}_{json_filename}.png"
+                    )
                     plot_path = f"{imgs_dir}/{plot_filename}"
                     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
                     plt.close()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
-    parser.add_argument("--model_arch", choices=['llama', 'olmo'], default='llama', help='default model architecture to use')
+    parser.add_argument(
+        "--model_arch",
+        choices=["llama", "olmo"],
+        default="llama",
+        help="default model architecture to use",
+    )
     args = parser.parse_args()
     main(args)

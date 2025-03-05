@@ -2,15 +2,19 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from tracing.utils.evaluate import evaluate
-from tracing.utils.evaluate import prepare_hf_dataset,prepare_hf_dataloader, prepare_programming_dataset, load_generated_datasets
+from tracing.utils.evaluate import (
+    prepare_hf_dataset,
+    prepare_hf_dataloader,
+)
 
 
 def statistic(base_model, ft_model, dataloader, device="cuda"):
     return compute_jsd(base_model, ft_model, dataloader, device)
 
+
 def statistic_stable(base_model, ft_model, dataloader, device="cuda"):
     return compute_jsd_stable(base_model, ft_model, dataloader, device)
+
 
 def compute_jsd(base_model, ft_model, dataloader, device="cuda"):
     jsds = []
@@ -104,8 +108,7 @@ def compute_jsd(base_model, ft_model, dataloader, device="cuda"):
             # print("-------------")
             # print(F.kl_div(m.log(), softmax_base))
             # print(F.kl_div(m.log(), softmax_ft))
-            jsd = 0.5 * (F.kl_div(m.log(), softmax_base) +
-                         F.kl_div(m.log(), softmax_ft))
+            jsd = 0.5 * (F.kl_div(m.log(), softmax_base) + F.kl_div(m.log(), softmax_ft))
 
             # print(jsd)
 
@@ -116,6 +119,7 @@ def compute_jsd(base_model, ft_model, dataloader, device="cuda"):
     # print(jsds)
     # print(sum(jsds))
     return sum(jsds)
+
 
 def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
     jsds = []
@@ -170,8 +174,8 @@ def compute_jsd_stable(base_model, ft_model, dataloader, device="cuda"):
 
 if __name__ == "__main__":
 
-    base_model_name = "LLM360/Amber" # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5' 
-    ft_model_name = "LLM360/AmberChat" # 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1"
+    base_model_name = "LLM360/Amber"  # 'openlm-research/open_llama_7b' # 'lmsys/vicuna-7b-v1.5'
+    ft_model_name = "LLM360/AmberChat"  # 'openlm-research/open_llama_7b_v2' # 'LLM360/Amber' # "lmsys/vicuna-7b-v1.1"
 
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name, torch_dtype=torch.bfloat16)
     ft_model = AutoModelForCausalLM.from_pretrained(ft_model_name, torch_dtype=torch.bfloat16)
@@ -180,7 +184,7 @@ if __name__ == "__main__":
     # dataset = load_generated_datasets(base_model_name, ft_model_name, 512, base_tokenizer, ["text"])
     # dataloader = prepare_hf_dataloader(dataset, 1)
 
-    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized",512,base_tokenizer)
-    dataloader = prepare_hf_dataloader(dataset,1)
+    dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", 512, base_tokenizer)
+    dataloader = prepare_hf_dataloader(dataset, 1)
 
     print(statistic(base_model, ft_model, dataloader))

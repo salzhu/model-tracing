@@ -1,41 +1,42 @@
 import torch
 
 from tracing.utils.utils import cossim, fisher
-from tracing.utils.llama.matching import match_wmats
-import scipy 
+import scipy
 import numpy as np
 from scipy.stats import chi2
 
 from scipy.optimize import linear_sum_assignment as LAP
 
+
 def statistic(base_model, ft_model):
     return csw_sp(base_model, ft_model)
 
-def csw_sp_layer(base_model,ft_model,layer_name):
+
+def csw_sp_layer(base_model, ft_model, layer_name):
 
     base_mat = base_model.state_dict()[layer_name]
     ft_mat = ft_model.state_dict()[layer_name]
 
-    matched = LAP(cossim(base_mat.type(torch.float64),ft_mat.type(torch.float64)), maximize=True)
+    matched = LAP(cossim(base_mat.type(torch.float64), ft_mat.type(torch.float64)), maximize=True)
     matched = matched[1]
     orig = torch.arange(len(matched))
 
     cor, pvalue = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
     return pvalue
 
-def csw_sp(model1,model2):
+
+def csw_sp(model1, model2):
 
     chi_squared = 0
     num_layers = 0
 
     p_values = []
 
-    for name1,name2 in zip(
-        list(model1.state_dict().keys()), list(model2.state_dict().keys())
-    ):
+    for name1, name2 in zip(list(model1.state_dict().keys()), list(model2.state_dict().keys())):
         if name1 != name2:
             raise ValueError(f"Model parameter names do not match: {name1} != {name2}")
-        elif "mlp.up_proj" not in name1: continue
+        elif "mlp.up_proj" not in name1:
+            continue
 
         pvalue = csw_sp_layer(model1, model2, name1)
         if not np.isnan(pvalue):
@@ -45,24 +46,26 @@ def csw_sp(model1,model2):
 
         print(name1, pvalue)
 
-    aggregate_pvalue = chi2.sf(chi_squared, df=2*num_layers)
+    aggregate_pvalue = chi2.sf(chi_squared, df=2 * num_layers)
     return aggregate_pvalue, p_values
 
-def csw_sp_pair(base_model,ft_model,layer_name_base, layer_name_ft):
+
+def csw_sp_pair(base_model, ft_model, layer_name_base, layer_name_ft):
 
     base_mat = base_model.state_dict()[layer_name_base]
     ft_mat = ft_model.state_dict()[layer_name_ft]
 
-    matched = LAP(cossim(base_mat.type(torch.float64),ft_mat.type(torch.float64)), maximize=True)
+    matched = LAP(cossim(base_mat.type(torch.float64), ft_mat.type(torch.float64)), maximize=True)
     matched = matched[1]
     orig = torch.arange(len(matched))
 
     cor, pvalue = scipy.stats.spearmanr(matched.tolist(), orig.tolist())
     return pvalue
 
-def statistic_all(base_model,ft_model):
-    base_model.to('cpu')
-    ft_model.to('cpu')
+
+def statistic_all(base_model, ft_model):
+    base_model.to("cpu")
+    ft_model.to("cpu")
 
     weights_base = base_model.state_dict()
     weights_ft = ft_model.state_dict()
@@ -80,16 +83,18 @@ def statistic_all(base_model,ft_model):
     for name1 in list(weights_base.keys()):
         for name2 in list(weights_ft.keys()):
             if shapes_base[name1] == shapes_ft[name2] and len(shapes_base[name1]) != 1:
-                pval = csw_sp_pair(base_model,ft_model,name1,name2)
-                print(name1,name2,pval)
+                pval = csw_sp_pair(base_model, ft_model, name1, name2)
+                print(name1, name2, pval)
                 pvalues.append(pval)
 
     print(pvalues)
 
     res = 0
 
-    if len(pvalues) == 0: res = 999
-    else: res = fisher(pvalues)
-    
+    if len(pvalues) == 0:
+        res = 999
+    else:
+        res = fisher(pvalues)
+
     print(res)
     return res

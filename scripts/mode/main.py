@@ -8,13 +8,13 @@ from tqdm import tqdm
 import math
 import matplotlib.pyplot as plt
 import csv
-from utils import calculate_l2_distance, interpolate_models
+from utils import interpolate_models
 import time
-import copy
 import argparse
 
 
 block_size = 512
+
 
 def group_texts(examples):
     # Concatenate all texts.
@@ -31,8 +31,10 @@ def group_texts(examples):
     result["labels"] = result["input_ids"].copy()
     return result
 
+
 def load_model(model_name):
     return AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+
 
 def main(args):
     # Automatically detect CUDA device
@@ -44,7 +46,7 @@ def main(args):
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     model_arch = args.model_arch
-    if model_arch == 'llama':
+    if model_arch == "llama":
         model_list = [
             "meta-llama/Llama-2-7b-hf",
             "codellama/CodeLlama-7b-hf",
@@ -56,10 +58,10 @@ def main(args):
             "microsoft/Orca-2-7b",
             "LLM360/Amber",
         ]
-    elif model_arch == 'olmo':
+    elif model_arch == "olmo":
         model_list = [
             "/scr/ahmedah/olmo/step1000_4B_tokens/seed_0_4B",
-            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B"
+            "/scr/ahmedah/olmo/step1000_4B_tokens/seed_42_4B",
         ]
 
     # Load tokenizer
@@ -71,7 +73,7 @@ def main(args):
         eval_dataset = load_dataset("dlwh/wikitext_103_detokenized", split="test")
         columns_ignored = ["text"]
     else:
-        raise ValueError(f"main.py only supports wikitext.")
+        raise ValueError("main.py only supports wikitext.")
 
     def tokenize_function(examples):
         return tokenizer(examples["text"])
@@ -117,7 +119,9 @@ def main(args):
     current_model_a, current_model_b = None, None
     current_model_a_name, current_model_b_name = None, None
 
-    for (idx_a, model_a_name), (idx_b, model_b_name) in tqdm(model_pairs, desc="Model Interpolation"):
+    for (idx_a, model_a_name), (idx_b, model_b_name) in tqdm(
+        model_pairs, desc="Model Interpolation"
+    ):
         if idx_a < idx_b:
             perplexities = []
 
@@ -139,8 +143,10 @@ def main(args):
                 for alpha in tqdm(
                     alphas, desc=f" \n Alpha Perplexities for {model_a_name} and {model_b_name}"
                 ):
-                    
-                    interpolated_model = interpolate_models(current_model_a, current_model_b, alpha, model_arch=model_arch)
+
+                    interpolated_model = interpolate_models(
+                        current_model_a, current_model_b, alpha, model_arch=model_arch
+                    )
                     interpolated_model = interpolated_model.half().to(device)
 
                     start_time = time.time()
@@ -150,7 +156,7 @@ def main(args):
                         input_ids = batch["input_ids"].to(device)
                         attention_mask = batch["attention_mask"].to(device)
                         labels = batch["labels"].to(device)
-                        
+
                         outputs = interpolated_model(
                             input_ids=input_ids,
                             attention_mask=attention_mask,
@@ -178,15 +184,13 @@ def main(args):
 
             # split on HF org so we don't get accidental
             # directory error
-            
+
             model_a_name = model_a_name.split("/")[-1]
             model_b_name = model_b_name.split("/")[-1]
             # Save perplexities and model names to CSV
             csv_filename = f"{csv_dir}/single_perplexities.csv"
-            csv_header = ["Model Pair"] + [
-                f"Alpha {alpha}" for alpha in alphas
-            ]
-            
+            csv_header = ["Model Pair"] + [f"Alpha {alpha}" for alpha in alphas]
+
             if not os.path.exists(csv_filename):
                 with open(csv_filename, "w", newline="") as csvfile:
                     writer = csv.writer(csvfile)
@@ -211,9 +215,17 @@ def main(args):
             plt.savefig(plot_path, dpi=300, bbox_inches="tight")
             plt.close()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Model Interpolation")
-    parser.add_argument("--dataset", choices=["wikitext", "json"], default="wikitext", help="Dataset to use")
-    parser.add_argument("--model_arch", choices=['llama', 'olmo'], default='llama', help='default model architecture to use')
+    parser.add_argument(
+        "--dataset", choices=["wikitext", "json"], default="wikitext", help="Dataset to use"
+    )
+    parser.add_argument(
+        "--model_arch",
+        choices=["llama", "olmo"],
+        default="llama",
+        help="default model architecture to use",
+    )
     args = parser.parse_args()
     main(args)

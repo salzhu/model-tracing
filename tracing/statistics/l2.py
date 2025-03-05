@@ -1,7 +1,9 @@
 import torch
 
+
 def statistic(base_model, ft_model):
     return calculate_l2_distance(base_model, ft_model)
+
 
 def calculate_l2_distance(model1, model2):
     total_squared_diff = 0

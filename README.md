@@ -1,6 +1,6 @@
 
 # LLM Model Tracing
-This repository investigates model tracing in large language models (LLMs). 
+This repository investigates model tracing in large language models (LLMs).
 
 Specifically, given a base LLM and a fine-tuned LLM, this code provides functionality to:
 
@@ -25,6 +25,34 @@ For development, install the development dependencies:
 ```bash
 pip install -r requirements-dev.txt
 ```
+
+### Code Formatting with pre-commit
+
+This repository uses pre-commit hooks to ensure code quality and consistency.
+
+1. Install pre-commit:
+
+```bash
+pip install pre-commit
+```
+
+2. Set up the pre-commit hooks:
+
+```bash
+pre-commit install
+```
+
+3. (Optional) Run pre-commit on all files:
+
+```bash
+pre-commit run --all-files
+```
+
+Pre-commit will automatically run on staged files when you commit changes, applying:
+- Black for code formatting
+- Ruff for linting and fixing common issues
+- nbQA for notebook formatting
+- Various file checks (trailing whitespace, YAML validity, etc.)
 
 ## Usage
 
@@ -79,7 +107,7 @@ This script launches multiple experiments in parallel using slurm. It reads mode
 
 ## Configuration
 
-The `model-tracing/config/model_list.yaml` file defines the base and fine-tuned models for the experiments. 
+The `model-tracing/config/model_list.yaml` file defines the base and fine-tuned models for the experiments.
 ## Data
 
 The code downloads and uses the Wikitext 103 dataset for perplexity evaluation.
@@ -107,4 +135,4 @@ The results of the experiments are saved as pickle files. The files contain dict
 
 Relevant scripts for running additional experiments described in our paper are in this folder. For example, there are experiments on retraining MLP blocks and evaluating our statistics.
 
-These include `experiments/localized_testing.py` (Section 3.2.1) for fine-grained forensics and layer-matching between two models; `experiments/csu_full.py` (Section 3.2.1) for full parameter-matching between any two model architectures for hybrid models; `experiments/generalized_match.py` (Section 2.3.2, 3.2.3, 3.2.4) for the generalized robust test that involes retraining or distilling GLU MLPs; and `experiments/huref.py` (Appendix F) where we reproduce and break the invariants from a related work (Zeng et al. 2024). 
+These include `experiments/localized_testing.py` (Section 3.2.1) for fine-grained forensics and layer-matching between two models; `experiments/csu_full.py` (Section 3.2.1) for full parameter-matching between any two model architectures for hybrid models; `experiments/generalized_match.py` (Section 2.3.2, 3.2.3, 3.2.4) for the generalized robust test that involes retraining or distilling GLU MLPs; and `experiments/huref.py` (Appendix F) where we reproduce and break the invariants from a related work (Zeng et al. 2024).

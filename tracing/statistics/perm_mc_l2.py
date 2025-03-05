@@ -2,17 +2,18 @@ import torch
 from tracing.perm.permute import permute_model
 from scripts.perm.main import p_value_exact, p_value_approx
 
+
 def statistic(base_model, ft_model, mc_stat, l2_stat, num_perm, emb_dim=4096, mlp_dim=11008):
 
-    unperm_stat_mc = mc_stat(base_model,ft_model)
-    unperm_stat_l2 = l2_stat(base_model,ft_model)
+    unperm_stat_mc = mc_stat(base_model, ft_model)
+    unperm_stat_l2 = l2_stat(base_model, ft_model)
 
     print(unperm_stat_mc, unperm_stat_l2)
 
     perm_stats_mc = []
     perm_stats_l2 = []
 
-    for i in range(num_perm): 
+    for i in range(num_perm):
         mlp_permutation = torch.randperm(mlp_dim)
         emb_permutation = torch.randperm(emb_dim)
 
@@ -35,4 +36,13 @@ def statistic(base_model, ft_model, mc_stat, l2_stat, num_perm, emb_dim=4096, ml
     print(exact_mc, approx_mc)
     print(exact_l2, approx_l2)
 
-    return exact_mc, approx_mc, exact_l2, approx_l2, unperm_stat_mc, unperm_stat_l2, perm_stats_mc, perm_stats_l2
+    return (
+        exact_mc,
+        approx_mc,
+        exact_l2,
+        approx_l2,
+        unperm_stat_mc,
+        unperm_stat_l2,
+        perm_stats_mc,
+        perm_stats_l2,
+    )
