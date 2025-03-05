@@ -1,6 +1,5 @@
 MLP_SIZE = 11008
 EMB_SIZE = 4096
-N_BLOCKS = 32
 
 import torch
 from transformers import (
@@ -133,7 +132,7 @@ if args.permute is True:
     if "olmo" in args.base_model_id.lower():
         permute_model_olmo(base_model, ft_model, mlp_permutation, emb_permutation)
     else:
-        permute_model(ft_model, ft_model, mlp_permutation, emb_permutation)
+        permute_model(base_model, ft_model, mlp_permutation, emb_permutation)
     print("ft model permuted")
 
 if args.rotate is True:
@@ -145,8 +144,7 @@ if "70b" in args.base_model_id.lower() and "70b" in args.ft_model_id.lower():
     tmp_model = None
 elif args.stat == "mode":
     tmp_model = AutoModelForCausalLM.from_pretrained(args.base_model_id, torch_dtype=dtype)
-if "olmo" in args.base_model_id.lower():
-    tmp_tokenizer = GPTNeoXTokenizerFast.from_pretrained(tokenizer_name, use_fast=False)
+# tmp_tokenizer is unused
 
 if args.dataset == "wikitext":
     dataset = prepare_hf_dataset("dlwh/wikitext_103_detokenized", args.block_size, base_tokenizer)

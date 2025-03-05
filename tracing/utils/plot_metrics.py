@@ -213,15 +213,10 @@ def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log
 
     fig, ax = plt.subplots()
     fig.set_size_inches(20, 20)
-    # im = ax.imshow(data, aspect=0.7)
     im = ax.imshow(data, cmap="viridis")
 
-    divider = make_axes_locatable(ax)
-    # cbar = divider.append_axes("right", size="5%", pad=0.05)
-
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    # plt.colorbar(im, cax=cbar)
-    # cbar.ax.set_ylabel("test statistic", rotation=-90, va="bottom")
+    _ = make_axes_locatable(ax)
+    _ = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
     # Show all ticks and label them with the respective list entries
     ax.set_xticks(np.arange(len(models)), labels=models)
@@ -243,7 +238,7 @@ def plot_statistic_grid(results_path, dict_base, title, plot_path, decimals, log
             texts[i][j] = str(data[i][j])
             if data[i][j] == 0.0:
                 texts[i][j] = "$\\varepsilon$"
-            text = ax.text(j, i, texts[i][j], ha="center", va="center", color="w")
+            _ = ax.text(j, i, texts[i][j], ha="center", va="center", color="w")
 
     ax.set_title(title)
     fig.tight_layout()
@@ -313,12 +308,8 @@ def plot_statistic_grid_layer(
     fig.set_size_inches(20, 20)
     im = ax.imshow(data)
 
-    divider = make_axes_locatable(ax)
-    # cbar = divider.append_axes("right", size="5%", pad=0.05)
-
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    # plt.colorbar(im, cax=cbar)
-    # cbar.ax.set_ylabel("test statistic", rotation=-90, va="bottom")
+    _ = make_axes_locatable(ax)
+    _ = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
     # Show all ticks and label them with the respective list entries
     ax.set_xticks(np.arange(len(models)), labels=models)
@@ -330,7 +321,7 @@ def plot_statistic_grid_layer(
     # Loop over data dimensions and create text annotations.
     for i in range(len(models)):
         for j in range(len(models)):
-            text = ax.text(j, i, data[i, j], ha="center", va="center", color="w")
+            _ = ax.text(j, i, data[i, j], ha="center", va="center", color="w")
 
     ax.set_title(title)
     fig.tight_layout()
@@ -450,18 +441,6 @@ def plot_pvalue(results_path, dict_ft, plot_path):
             stat = get_layer_statistic_from_file(results_path + "/" + file, layer)
             if not np.isnan(stat):
                 pvalues.append(stat)
-    # for file in dir_list:
-    #     models = file[:file.find('.out')]
-    #     if("huggyllama" in models): continue
-    #     print(models)
-    #     ft = int(dict_ft[models])
-    #     if ft == True: continue
-    #     stat = get_statistic_from_file(results_path + '/' + file)
-    #     if not np.isnan(stat):
-    #         pvalues.append(stat)
-
-    # x = np.arange(-10, 0, step=0.1)
-    # x = np.power(10, x)
     x = np.arange(0, 1, step=0.001)
     y = []
     print(pvalues)
